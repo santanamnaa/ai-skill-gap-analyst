@@ -1,0 +1,55 @@
+John Smith
+Senior Software Engineer
+Email: john.smith@email.com
+Phone: (555) 123-4567
+LinkedIn: linkedin.com/in/johnsmith
+GitHub: github.com/johnsmith
+
+EXPERIENCE
+
+Senior Software Engineer, TechCorp Inc. (2021 - Present)
+• Led development of microservices architecture serving 1M+ daily users
+• Implemented CI/CD pipelines using Jenkins and Docker, reducing deployment time by 60%
+• Mentored team of 5 junior developers and conducted code reviews
+• Optimized database queries resulting in 40% performance improvement
+• Collaborated with product managers and designers on feature requirements
+
+Software Engineer, StartupXYZ (2019 - 2021)
+• Developed RESTful APIs using Python Flask and PostgreSQL
+• Built responsive web applications with React and TypeScript
+• Integrated third-party payment systems and authentication services
+• Participated in agile development process and sprint planning
+• Wrote comprehensive unit tests achieving 90% code coverage
+
+Junior Developer, WebSolutions LLC (2018 - 2019)
+• Created dynamic websites using HTML, CSS, JavaScript, and PHP
+• Maintained legacy systems and fixed critical production bugs
+• Assisted in database design and optimization
+• Learned version control with Git and collaborative development
+
+SKILLS
+
+Programming Languages: Python, JavaScript, TypeScript, Java, SQL, HTML, CSS
+Frameworks: React, Flask, Django, Node.js, Express.js
+Tools: Docker, Jenkins, Git, PostgreSQL, MongoDB, Redis, AWS
+Methodologies: Agile, Scrum, Test-Driven Development, Code Review
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+State University (2014 - 2018)
+Relevant Coursework: Data Structures, Algorithms, Database Systems, Software Engineering
+
+PROJECTS
+
+E-commerce Platform (2020)
+Built full-stack e-commerce application using React frontend and Python Flask backend. Implemented user authentication, product catalog, shopping cart, and payment processing. Deployed on AWS with Docker containers and PostgreSQL database.
+Tech Stack: React, Flask, PostgreSQL, Docker, AWS, Stripe API
+
+Machine Learning Price Predictor (2021)
+Developed ML model to predict real estate prices using Python and scikit-learn. Collected and cleaned data from multiple sources, performed feature engineering, and achieved 85% accuracy. Created web interface for model predictions.
+Tech Stack: Python, scikit-learn, pandas, Flask, HTML/CSS
+
+Task Management API (2022)
+Created RESTful API for task management system with user authentication, CRUD operations, and real-time notifications. Implemented using Node.js, Express, MongoDB, and WebSocket connections.
+Tech Stack: Node.js, Express.js, MongoDB, Socket.io, JWT

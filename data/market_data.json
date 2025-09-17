@@ -1,0 +1,90 @@
+{
+  "senior_ai_engineer": {
+    "core_skills": ["Python", "Machine Learning", "Deep Learning", "MLOps", "TensorFlow", "PyTorch"],
+    "preferred_skills": ["Kubernetes", "Docker", "AWS", "Data Engineering", "NLP", "Computer Vision"],
+    "emerging_trends": ["LLM Fine-tuning", "Prompt Engineering", "Vector Databases", "MLOps Automation"],
+    "frameworks": ["PyTorch", "TensorFlow", "Scikit-learn", "Hugging Face", "LangChain", "FastAPI"],
+    "tools": ["Docker", "Kubernetes", "AWS", "Git", "MLflow", "Weights & Biases", "Jupyter"],
+    "languages": ["Python", "SQL", "R", "Scala", "JavaScript"],
+    "salary_range": "$120,000 - $200,000",
+    "demand_level": "Very High",
+    "growth_areas": ["Generative AI", "MLOps", "Edge AI", "Responsible AI"]
+  },
+  "backend_engineer": {
+    "core_skills": ["Python", "Java", "API Development", "Database Design", "System Architecture"],
+    "preferred_skills": ["Microservices", "Cloud Platforms", "DevOps", "Performance Optimization"],
+    "emerging_trends": ["Serverless Architecture", "Event-Driven Systems", "GraphQL", "gRPC"],
+    "frameworks": ["Django", "Flask", "FastAPI", "Spring Boot", "Express.js", "Gin"],
+    "tools": ["Docker", "Kubernetes", "PostgreSQL", "Redis", "Kafka", "Jenkins"],
+    "languages": ["Python", "Java", "Go", "JavaScript", "SQL"],
+    "salary_range": "$90,000 - $160,000",
+    "demand_level": "High",
+    "growth_areas": ["Cloud-Native Development", "Microservices", "API Security", "Performance Engineering"]
+  },
+  "devops_engineer": {
+    "core_skills": ["Infrastructure as Code", "CI/CD", "Cloud Platforms", "Containerization", "Monitoring"],
+    "preferred_skills": ["Kubernetes", "Terraform", "Ansible", "Security", "Cost Optimization"],
+    "emerging_trends": ["GitOps", "Service Mesh", "Observability", "Platform Engineering"],
+    "frameworks": ["Terraform", "Ansible", "Helm", "ArgoCD", "Prometheus", "Grafana"],
+    "tools": ["Docker", "Kubernetes", "Jenkins", "GitLab CI", "AWS", "Azure", "Terraform"],
+    "languages": ["Python", "Go", "Bash", "YAML", "HCL"],
+    "salary_range": "$100,000 - $170,000",
+    "demand_level": "Very High",
+    "growth_areas": ["Platform Engineering", "Security Automation", "Multi-Cloud", "Edge Computing"]
+  },
+  "frontend_engineer": {
+    "core_skills": ["JavaScript", "React", "HTML/CSS", "Responsive Design", "State Management"],
+    "preferred_skills": ["TypeScript", "Testing", "Performance Optimization", "Accessibility"],
+    "emerging_trends": ["Server Components", "Edge Computing", "Web Assembly", "Micro Frontends"],
+    "frameworks": ["React", "Vue.js", "Angular", "Next.js", "Svelte", "Tailwind CSS"],
+    "tools": ["Webpack", "Vite", "Jest", "Cypress", "Figma", "Git"],
+    "languages": ["JavaScript", "TypeScript", "HTML", "CSS", "SCSS"],
+    "salary_range": "$80,000 - $140,000",
+    "demand_level": "High",
+    "growth_areas": ["React Server Components", "Performance Optimization", "Web Accessibility", "Mobile-First Design"]
+  },
+  "data_scientist": {
+    "core_skills": ["Python", "Statistics", "Machine Learning", "Data Analysis", "SQL"],
+    "preferred_skills": ["Deep Learning", "Big Data", "Cloud Platforms", "Visualization", "A/B Testing"],
+    "emerging_trends": ["MLOps", "AutoML", "Explainable AI", "Real-time ML"],
+    "frameworks": ["Pandas", "NumPy", "Scikit-learn", "TensorFlow", "PyTorch", "Matplotlib"],
+    "tools": ["Jupyter", "Docker", "Git", "Tableau", "Power BI", "Spark"],
+    "languages": ["Python", "R", "SQL", "Scala", "Julia"],
+    "salary_range": "$95,000 - $165,000",
+    "demand_level": "High",
+    "growth_areas": ["MLOps", "Real-time Analytics", "Causal Inference", "Privacy-Preserving ML"]
+  },
+  "fullstack_engineer": {
+    "core_skills": ["JavaScript", "React", "Node.js", "Database Design", "API Development"],
+    "preferred_skills": ["TypeScript", "Cloud Deployment", "Testing", "DevOps", "Mobile Development"],
+    "emerging_trends": ["Serverless", "JAMstack", "Edge Computing", "Progressive Web Apps"],
+    "frameworks": ["React", "Next.js", "Express.js", "Django", "PostgreSQL", "MongoDB"],
+    "tools": ["Git", "Docker", "AWS", "Vercel", "Netlify", "Jest"],
+    "languages": ["JavaScript", "TypeScript", "Python", "SQL", "HTML/CSS"],
+    "salary_range": "$85,000 - $150,000",
+    "demand_level": "High",
+    "growth_areas": ["Full-Stack TypeScript", "Serverless Architecture", "Real-time Applications", "Cross-Platform Development"]
+  },
+  "mobile_engineer": {
+    "core_skills": ["React Native", "iOS Development", "Android Development", "Mobile UI/UX"],
+    "preferred_skills": ["Flutter", "Native Performance", "App Store Optimization", "Testing"],
+    "emerging_trends": ["Cross-Platform Development", "AR/VR Integration", "5G Applications"],
+    "frameworks": ["React Native", "Flutter", "Swift UI", "Jetpack Compose", "Expo"],
+    "tools": ["Xcode", "Android Studio", "Git", "Firebase", "TestFlight"],
+    "languages": ["JavaScript", "TypeScript", "Swift", "Kotlin", "Dart"],
+    "salary_range": "$90,000 - $155,000",
+    "demand_level": "Medium-High",
+    "growth_areas": ["Cross-Platform Frameworks", "AR/VR Integration", "IoT Mobile Apps", "Progressive Web Apps"]
+  },
+  "security_engineer": {
+    "core_skills": ["Cybersecurity", "Penetration Testing", "Security Architecture", "Compliance"],
+    "preferred_skills": ["Cloud Security", "DevSecOps", "Incident Response", "Risk Assessment"],
+    "emerging_trends": ["Zero Trust Architecture", "AI Security", "Container Security", "Supply Chain Security"],
+    "frameworks": ["OWASP", "NIST", "ISO 27001", "MITRE ATT&CK", "Terraform", "Ansible"],
+    "tools": ["Burp Suite", "Nessus", "Wireshark", "Metasploit", "Docker", "Kubernetes"],
+    "languages": ["Python", "Go", "Bash", "PowerShell", "C++"],
+    "salary_range": "$110,000 - $180,000",
+    "demand_level": "Very High",
+    "growth_areas": ["Cloud Security", "AI/ML Security", "DevSecOps", "Zero Trust Implementation"]
+  }
+}
