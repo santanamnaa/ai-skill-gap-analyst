@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "src"))
 
-from src.schemas import AnalysisState, StructuredCV
+from src.schemas import AnalysisState
 from src.orchestrator.workflow import create_workflow, LangGraphWorkflow, SimpleWorkflowOrchestrator
 from src.agents.cv_parser import CVParserAgent
 from src.agents.market_intelligence import MarketIntelligenceAgent
@@ -70,7 +70,7 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(result.target_role, self.target_role)
         
         # Check that CV was parsed
-        self.assertIsNotNone(result.cv_structured.personal.name)
+        self.assertIsNotNone(result.structured_cv.personal.name)
         
         # Check that analysis was performed
         self.assertIsNotNone(result.skills_analysis)
@@ -105,17 +105,17 @@ class TestCVParser(unittest.TestCase):
     def test_personal_info_extraction(self):
         """Test personal information extraction."""
         state = AnalysisState(cv_raw=self.sample_cv)
-        result = self.parser.parse_cv(state)
+        result = self.parser.run(state)
         
-        self.assertEqual(result.cv_structured.personal.name, "Jane Smith")
-        self.assertIn("email", result.cv_structured.personal.contact)
+        self.assertEqual(result.structured_cv.personal.name, "Jane Smith")
+        self.assertIn("email", result.structured_cv.personal.contact)
     
     def test_skills_extraction(self):
         """Test skills extraction."""
         state = AnalysisState(cv_raw=self.sample_cv)
-        result = self.parser.parse_cv(state)
+        result = self.parser.run(state)
         
-        skills = result.cv_structured.skills
+        skills = result.structured_cv.skills
         all_skills = skills.languages + skills.frameworks + skills.tools
         
         self.assertIn("python", all_skills)
@@ -125,11 +125,74 @@ class TestCVParser(unittest.TestCase):
     def test_experience_extraction(self):
         """Test experience extraction."""
         state = AnalysisState(cv_raw=self.sample_cv)
-        result = self.parser.parse_cv(state)
+        result = self.parser.run(state)
         
-        experience = result.cv_structured.experience
+        experience = result.structured_cv.experience
         self.assertTrue(len(experience) > 0)
         self.assertIn("StartupXYZ", experience[0].company)
+    
+    def test_regex_parsing_mode(self):
+        """Test regex parsing mode explicitly."""
+        # Ensure regex mode
+        os.environ['USE_SPACY_PARSER'] = 'false'
+        parser = CVParserAgent()
+        
+        state = AnalysisState(cv_raw=self.sample_cv)
+        result = parser.run(state)
+        
+        self.assertIsNotNone(result.structured_cv.personal.name)
+        self.assertTrue(len(result.structured_cv.skills.languages + 
+                           result.structured_cv.skills.frameworks + 
+                           result.structured_cv.skills.tools) > 0)
+    
+    def test_spacy_parsing_mode(self):
+        """Test spaCy parsing mode with fallback."""
+        # Set spaCy mode
+        os.environ['USE_SPACY_PARSER'] = 'true'
+        parser = CVParserAgent()
+        
+        state = AnalysisState(cv_raw=self.sample_cv)
+        result = parser.run(state)
+        
+        # Should work either with spaCy or fallback to regex
+        self.assertIsNotNone(result.structured_cv.personal.name)
+        self.assertTrue(len(result.structured_cv.skills.languages + 
+                           result.structured_cv.skills.frameworks + 
+                           result.structured_cv.skills.tools) > 0)
+    
+    def test_cv_parser_spacy_fallback(self):
+        """Test spaCy failure fallback to regex parsing."""
+        # Mock spaCy failure by setting environment but ensuring fallback works
+        os.environ['USE_SPACY_PARSER'] = 'true'
+        parser = CVParserAgent()
+        
+        # Force spaCy to None to simulate failure
+        parser._spacy_nlp = None
+        
+        state = AnalysisState(cv_raw=self.sample_cv)
+        
+        # Mock spaCy import failure by temporarily modifying the parse_with_spacy method
+        original_method = parser.parse_with_spacy
+        def mock_spacy_failure(text):
+            # Simulate spaCy failure and fallback
+            return parser.parse_with_regex(text)
+        
+        parser.parse_with_spacy = mock_spacy_failure
+        
+        result = parser.run(state)
+        
+        # Should successfully parse using regex fallback
+        self.assertIsNotNone(result.structured_cv.personal.name)
+        self.assertTrue(len(result.structured_cv.skills.languages + 
+                           result.structured_cv.skills.frameworks + 
+                           result.structured_cv.skills.tools) > 0)
+        
+        # Restore original method
+        parser.parse_with_spacy = original_method
+        
+        # Clean up environment
+        if 'USE_SPACY_PARSER' in os.environ:
+            del os.environ['USE_SPACY_PARSER']
 
 
 class TestMarketIntelligence(unittest.TestCase):

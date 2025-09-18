@@ -1,4 +1,4 @@
-# Core dependencies for CV Skill Gap Analysis System
+# Core dependencies for AI Skill Gap Analyst
 # MANDATORY: LangGraph-based multi-agent orchestration
 
 # Primary framework requirements (CRITICAL)
@@ -8,16 +8,18 @@ pydantic>=2.0.0
 typer>=0.9.0
 rich>=13.0.0
 
-# Development and testing
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.0.0
+# Optional spaCy dependencies (uncomment to enable spaCy NER mode)
+# spacy>=3.4.0
+# numpy>=1.19.0
 
-# Type checking and code quality
-mypy>=1.0.0
-black>=23.0.0
-ruff>=0.1.0
-isort>=5.0.0
+# Development dependencies (optional)
+# pytest>=7.0.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.0.0
+# black>=23.0.0
+# ruff>=0.1.0
+# mypy>=1.0.0
+# isort>=5.0.0
 
 # Note: This system now requires LangGraph as the primary orchestration framework
 # Use 'uv sync' for optimal dependency management or 'pip install -r requirements.txt' as fallback

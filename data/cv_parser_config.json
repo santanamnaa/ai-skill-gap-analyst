@@ -1,0 +1,59 @@
+{
+  "section_patterns": {
+    "experience": [
+      "(?i)(work\\s+)?experience",
+      "(?i)professional\\s+experience",
+      "(?i)employment\\s+history",
+      "(?i)career\\s+history"
+    ],
+    "skills": [
+      "(?i)skills?",
+      "(?i)technical\\s+skills?",
+      "(?i)competencies",
+      "(?i)technologies"
+    ],
+    "education": [
+      "(?i)education",
+      "(?i)academic\\s+background",
+      "(?i)qualifications"
+    ],
+    "projects": [
+      "(?i)projects?",
+      "(?i)personal\\s+projects?",
+      "(?i)portfolio"
+    ]
+  },
+  "skill_categories": {
+    "programming_languages": [
+      "python", "java", "javascript", "typescript", "c++", "c#", "go", "rust",
+      "php", "ruby", "swift", "kotlin", "scala", "r", "matlab", "sql"
+    ],
+    "frameworks": [
+      "react", "angular", "vue", "django", "flask", "fastapi", "spring",
+      "express", "nodejs", "tensorflow", "pytorch", "scikit-learn",
+      "pandas", "numpy", "keras", "opencv"
+    ],
+    "tools": [
+      "docker", "kubernetes", "git", "jenkins", "aws", "azure", "gcp",
+      "terraform", "ansible", "mongodb", "postgresql", "redis", "elasticsearch",
+      "kafka", "spark", "hadoop", "tableau", "powerbi"
+    ]
+  },
+  "tech_normalizations": {
+    "node.js": "nodejs",
+    "node": "nodejs",
+    "react.js": "react",
+    "vue.js": "vue",
+    "angular.js": "angular",
+    "c++": "cpp",
+    "c#": "csharp",
+    ".net": "dotnet",
+    "postgresql": "postgres",
+    "mongodb": "mongo"
+  },
+  "degree_patterns": [
+    "(?i)(bachelor|master|phd|doctorate|diploma|certificate).*?(\\d{4})",
+    "(?i)(b\\.?s\\.?|m\\.?s\\.?|ph\\.?d\\.?).*?(\\d{4})",
+    "(?i)(undergraduate|graduate).*?(\\d{4})"
+  ]
+}

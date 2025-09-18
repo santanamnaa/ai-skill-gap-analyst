@@ -1,302 +1,312 @@
 """
-LangGraph Workflow Orchestrator for CV Skill Gap Analysis System
-
-This module implements the LangGraph StateGraph for coordinating the multi-agent workflow.
-Uses LangGraph's state machine pattern for advanced workflow management.
+## Updated by AI Agent on September 18, 2025
+LangGraph-based workflow orchestrator for CV Skill Gap Analysis.
+Coordinates CV Parser → Skill Analyst → Market Intelligence → Report Generator pipeline.
 """
 
+import os
 import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from dataclasses import asdict
-
-try:
-    from langgraph.graph import StateGraph, START, END
-    from langgraph.checkpoint.memory import MemorySaver
-    LANGGRAPH_AVAILABLE = True
-except ImportError:
-    LANGGRAPH_AVAILABLE = False
-    StateGraph = None
-    START = None
-    END = None
-    MemorySaver = None
-
-from ..schemas import AnalysisState, LangGraphState
-from ..agents.cv_parser import cv_parser_node
-from ..agents.skill_analyst import skill_analyst_node
-from ..agents.market_intelligence import market_intelligence_node
-from ..agents.report_generator import report_generator_node
+import time
+from typing import Dict, Any
+from langgraph.graph import StateGraph, END
+from ..schemas import AnalysisState
+from ..agents.cv_parser import CVParserAgent
+from ..agents.skill_analyst import SkillAnalystAgent  
+from ..agents.market_intelligence import MarketIntelligenceAgent
+from ..agents.report_generator import ReportGeneratorAgent
 
 logger = logging.getLogger(__name__)
 
 
-# Shared state management
-_shared_analysis_state: Optional[AnalysisState] = None
-
-def _get_analysis_state(state: LangGraphState) -> AnalysisState:
-    """Get or create shared analysis state."""
-    global _shared_analysis_state
-    if _shared_analysis_state is None:
-        _shared_analysis_state = AnalysisState(
-            cv_raw=state["cv_raw_content"],
-            target_role=state["target_role"]
-        )
-    return _shared_analysis_state
-
-def _update_langgraph_state(state: LangGraphState, analysis_state: AnalysisState, node_name: str) -> LangGraphState:
-    """Update LangGraph state from analysis state."""
-    state["cv_structured"] = asdict(analysis_state.cv_structured)
-    state["skills_analysis"] = asdict(analysis_state.skills_analysis)
-    state["market_intelligence"] = asdict(analysis_state.market_intelligence)
-    state["final_report"] = analysis_state.final_report
-    state["processing_errors"] = analysis_state.errors
-    state["processing_log"].append(f"{node_name} completed at {datetime.now().isoformat()}")
-    return state
-
-# LangGraph Node Adapters
-def cv_parser_langgraph_node(state: LangGraphState) -> LangGraphState:
-    """LangGraph adapter for CV parser node."""
-    logger.info("Executing CV Parser node")
+# Environment Configuration
+def _log_environment_config() -> None:
+    """Log active environment configuration at startup."""
+    config = {
+        'USE_SPACY_PARSER': os.getenv('USE_SPACY_PARSER', 'false'),
+        'USE_LLM_ANALYST': os.getenv('USE_LLM_ANALYST', 'false'),
+        'USE_RAG': os.getenv('USE_RAG', 'false'),
+        'USE_LLM_REPORT': os.getenv('USE_LLM_REPORT', 'false')
+    }
     
-    # Get shared analysis state
-    analysis_state = _get_analysis_state(state)
-    
-    # Run the parser
-    result_state = cv_parser_node(analysis_state)
-    
-    # Update shared state
-    global _shared_analysis_state
-    _shared_analysis_state = result_state
-    
-    # Update LangGraph state
-    return _update_langgraph_state(state, result_state, "CV Parser")
+    logger.info("Active Environment Configuration:")
+    for key, value in config.items():
+        logger.info(f"  {key}: {value}")
 
 
-def skill_analyst_langgraph_node(state: LangGraphState) -> LangGraphState:
-    """LangGraph adapter for skill analyst node."""
-    logger.info("Executing Skill Analyst node")
-    
-    # Get shared analysis state
-    analysis_state = _get_analysis_state(state)
-    
-    # Run the analyst
-    result_state = skill_analyst_node(analysis_state)
-    
-    # Update shared state
-    global _shared_analysis_state
-    _shared_analysis_state = result_state
-    
-    # Update LangGraph state
-    return _update_langgraph_state(state, result_state, "Skill Analyst")
-
-
-def market_intelligence_langgraph_node(state: LangGraphState) -> LangGraphState:
-    """LangGraph adapter for market intelligence node."""
-    logger.info("Executing Market Intelligence node")
-    
-    # Get shared analysis state
-    analysis_state = _get_analysis_state(state)
-    
-    # Run the market intelligence
-    result_state = market_intelligence_node(analysis_state)
-    
-    # Update shared state
-    global _shared_analysis_state
-    _shared_analysis_state = result_state
-    
-    # Update LangGraph state
-    return _update_langgraph_state(state, result_state, "Market Intelligence")
-
-
-def report_generator_langgraph_node(state: LangGraphState) -> LangGraphState:
-    """LangGraph adapter for report generator node."""
-    logger.info("Executing Report Generator node")
-    
-    # Get shared analysis state
-    analysis_state = _get_analysis_state(state)
-    
-    # Run the report generator
-    result_state = report_generator_node(analysis_state)
-    
-    # Update shared state
-    global _shared_analysis_state
-    _shared_analysis_state = result_state
-    
-    # Update LangGraph state
-    return _update_langgraph_state(state, result_state, "Report Generator")
-
-
-class LangGraphWorkflow:
+# Node Functions with Error Handling and Validation
+def parse_cv(state: AnalysisState) -> AnalysisState:
     """
-    LangGraph-based workflow orchestrator for CV Skill Gap Analysis.
+    CV Parser node with error handling and state validation.
     
-    Uses LangGraph's StateGraph for advanced multi-agent orchestration
-    with proper state management and error handling.
+    Args:
+        state: Analysis state with CV raw content
+        
+    Returns:
+        Updated state with structured CV data
     """
+    start_time = time.time()
+    logger.info("Starting CV Parser node")
     
-    def __init__(self):
-        """Initialize the LangGraph workflow."""
-        if not LANGGRAPH_AVAILABLE:
-            raise ImportError(
-                "LangGraph is not available. Please install it with: "
-                "pip install langgraph>=0.0.40"
-            )
+    try:
+        # State validation
+        if not state.cv_raw.strip():
+            logger.warning("No CV content provided to parser")
+            state.add_error("Empty CV content provided")
+            return state
         
-        self.workflow = None
-        self.compiled_app = None
-        self._build_graph()
-    
-    def _build_graph(self) -> None:
-        """Build the LangGraph StateGraph."""
-        logger.info("Building LangGraph workflow...")
+        # Execute CV parser
+        parser = CVParserAgent()
+        result_state = parser.run(state)
         
-        # Create the workflow graph
-        workflow = StateGraph(LangGraphState)
+        # Log execution time
+        execution_time = time.time() - start_time
+        logger.info(f"CV Parser completed in {execution_time:.2f}s")
         
-        # Add nodes (one for each agent)
-        workflow.add_node("parse_cv", cv_parser_langgraph_node)
-        workflow.add_node("analyze_skills", skill_analyst_langgraph_node) 
-        workflow.add_node("gather_market_intel", market_intelligence_langgraph_node)
-        workflow.add_node("generate_report", report_generator_langgraph_node)
+        # Validation check
+        if not result_state.cv_structured.personal.name:
+            logger.warning("CV Parser did not extract candidate name")
         
-        # Define the execution flow
-        workflow.add_edge(START, "parse_cv")
-        workflow.add_edge("parse_cv", "analyze_skills")
-        workflow.add_edge("analyze_skills", "gather_market_intel") 
-        workflow.add_edge("gather_market_intel", "generate_report")
-        workflow.add_edge("generate_report", END)
+        return result_state
         
-        # Set entry and exit points
-        workflow.set_entry_point("parse_cv")
-        workflow.set_finish_point("generate_report")
-        
-        # Compile the application with memory
-        memory = MemorySaver()
-        self.compiled_app = workflow.compile(checkpointer=memory)
-        
-        logger.info("LangGraph workflow built successfully")
-    
-    def run_analysis(self, cv_text: str, target_role: str) -> AnalysisState:
-        """
-        Run the complete CV analysis workflow using LangGraph.
-        
-        Args:
-            cv_text: Raw CV text content
-            target_role: Target job role for analysis
-            
-        Returns:
-            Final analysis state with results
-        """
-        logger.info("Starting LangGraph CV analysis workflow")
-        
-        # Reset shared state for new analysis
-        global _shared_analysis_state
-        _shared_analysis_state = None
-        
-        # Initialize LangGraph state
-        initial_state: LangGraphState = {
-            "cv_raw_content": cv_text,
-            "target_role": target_role,
-            "cv_structured": {},
-            "skills_analysis": {},
-            "market_intelligence": {},
-            "final_report": "",
-            "processing_errors": [],
-            "processing_log": [f"Workflow started at {datetime.now().isoformat()}"],
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        try:
-            # Execute the workflow
-            config = {"configurable": {"thread_id": "cv_analysis_thread"}}
-            final_state = self.compiled_app.invoke(initial_state, config=config)
-            
-            # Convert back to AnalysisState for compatibility
-            result_state = AnalysisState(
-                cv_raw=final_state["cv_raw_content"],
-                target_role=final_state["target_role"],
-                final_report=final_state["final_report"],
-                errors=final_state["processing_errors"]
-            )
-            
-            logger.info("LangGraph workflow completed successfully")
-            return result_state
-            
-        except Exception as e:
-            logger.error(f"LangGraph workflow execution failed: {str(e)}")
-            error_state = AnalysisState(
-                cv_raw=cv_text,
-                target_role=target_role,
-                errors=[f"LangGraph workflow error: {str(e)}"]
-            )
-            return error_state
-
-
-# Fallback simple orchestrator for compatibility
-class SimpleWorkflowOrchestrator:
-    """
-    Simple fallback orchestrator when LangGraph is not available.
-    
-    Maintains compatibility with existing code while providing
-    a path to migrate to LangGraph.
-    """
-    
-    def __init__(self):
-        logger.warning("Using fallback simple orchestrator. Install LangGraph for full functionality.")
-    
-    def run_analysis(self, cv_text: str, target_role: str) -> AnalysisState:
-        """
-        Run analysis using simple sequential execution.
-        
-        Args:
-            cv_text: Raw CV text content
-            target_role: Target job role for analysis
-            
-        Returns:
-            Final analysis state with results
-        """
-        logger.info("Starting simple workflow analysis")
-        
-        # Initialize state
-        state = AnalysisState(cv_raw=cv_text, target_role=target_role)
-        
-        try:
-            # Sequential execution
-            state = cv_parser_node(state)
-            state = skill_analyst_node(state)
-            state = market_intelligence_node(state)
-            state = report_generator_node(state)
-            
-            logger.info("Simple workflow completed successfully")
-            
-        except Exception as e:
-            logger.error(f"Simple workflow execution failed: {str(e)}")
-            state.add_error(f"Workflow execution error: {str(e)}")
-        
+    except Exception as e:
+        execution_time = time.time() - start_time
+        error_msg = f"CV Parser failed after {execution_time:.2f}s: {str(e)}"
+        logger.error(f"{error_msg}")
+        state.add_error(error_msg)
         return state
 
 
-def create_workflow(use_langgraph: bool = True):
+def analyze_skills(state: AnalysisState) -> AnalysisState:
     """
-    Factory function to create workflow orchestrator.
+    Skill Analyst node with error handling and state validation.
     
     Args:
-        use_langgraph: Whether to use LangGraph implementation (default: True)
+        state: Analysis state with structured CV data
         
     Returns:
-        Workflow orchestrator instance
+        Updated state with skills analysis
     """
-    if use_langgraph and LANGGRAPH_AVAILABLE:
-        try:
-            logger.info("Creating LangGraph workflow orchestrator")
-            return LangGraphWorkflow()
-        except Exception as e:
-            logger.warning(f"Failed to create LangGraph workflow: {str(e)}")
-            logger.warning("Falling back to simple orchestrator")
+    start_time = time.time()
+    logger.info("Starting Skill Analyst node")
     
-    if not LANGGRAPH_AVAILABLE:
-        logger.warning(
-            "LangGraph not available. Install with: pip install langgraph>=0.0.40"
+    try:
+        # State validation
+        if not state.cv_structured.personal.name:
+            logger.warning("No structured CV data available for skill analysis")
+            state.add_error("Prerequisites missing: structured CV data required")
+            return state
+        
+        # Execute skill analyst
+        analyst = SkillAnalystAgent()
+        result_state = analyst.run(state)
+        
+        # Log execution time
+        execution_time = time.time() - start_time
+        logger.info(f"Skill Analyst completed in {execution_time:.2f}s")
+        
+        # Validation check
+        if result_state.skills_analysis and result_state.skills_analysis.explicit_skills:
+            skill_count = len(result_state.skills_analysis.explicit_skills.get('tech', []))
+            logger.info(f"   Identified {skill_count} technical skills")
+        
+        return result_state
+        
+    except Exception as e:
+        execution_time = time.time() - start_time
+        error_msg = f"Skill Analyst failed after {execution_time:.2f}s: {str(e)}"
+        logger.error(f"{error_msg}")
+        state.add_error(error_msg)
+        return state
+
+
+def gather_market_intel(state: AnalysisState) -> AnalysisState:
+    """
+    Market Intelligence node with error handling and state validation.
+    
+    Args:
+        state: Analysis state with target role
+        
+    Returns:
+        Updated state with market intelligence data
+    """
+    start_time = time.time()
+    logger.info("Starting Market Intelligence node")
+    
+    try:
+        # State validation
+        if not state.target_role.strip():
+            logger.warning("No target role specified for market intelligence")
+            state.add_error("Prerequisites missing: target role required")
+            return state
+        
+        # Execute market intelligence
+        market_agent = MarketIntelligenceAgent()
+        result_state = market_agent.run(state)
+        
+        # Log execution time
+        execution_time = time.time() - start_time
+        logger.info(f"Market Intelligence completed in {execution_time:.2f}s")
+        
+        # Validation check
+        if result_state.market_intelligence:
+            demand_level = result_state.market_intelligence.market_insights.demand_level
+            logger.info(f"   Market demand level: {demand_level}")
+        
+        return result_state
+        
+    except Exception as e:
+        execution_time = time.time() - start_time
+        error_msg = f"Market Intelligence failed after {execution_time:.2f}s: {str(e)}"
+        logger.error(f"{error_msg}")
+        state.add_error(error_msg)
+        return state
+
+
+def generate_report(state: AnalysisState) -> AnalysisState:
+    """
+    Report Generator node with error handling and state validation.
+    
+    Args:
+        state: Analysis state with all collected data
+        
+    Returns:
+        Updated state with final report
+    """
+    start_time = time.time()
+    logger.info("Starting Report Generator node")
+    
+    try:
+        # State validation
+        if not state.cv_structured.personal.name:
+            logger.warning("No candidate data available for report generation")
+            state.add_error("Prerequisites missing: candidate data required")
+            return state
+        
+        if not state.target_role:
+            logger.warning("No target role specified for report generation")
+            state.add_error("Prerequisites missing: target role required")
+            return state
+        
+        # Execute report generator
+        report_agent = ReportGeneratorAgent()
+        result_state = report_agent.run(state)
+        
+        # Log execution time
+        execution_time = time.time() - start_time
+        logger.info(f"Report Generator completed in {execution_time:.2f}s")
+        
+        # Validation check
+        if result_state.final_report:
+            report_length = len(result_state.final_report)
+            logger.info(f"   Generated report: {report_length} characters")
+        
+        return result_state
+        
+    except Exception as e:
+        execution_time = time.time() - start_time
+        error_msg = f"Report Generator failed after {execution_time:.2f}s: {str(e)}"
+        logger.error(f"{error_msg}")
+        state.add_error(error_msg)
+        return state
+
+
+# Graph Construction
+def create_workflow() -> StateGraph:
+    """
+    Create and configure the LangGraph workflow.
+    
+    Returns:
+        Configured StateGraph for CV analysis pipeline
+    """
+    logger.info("Building LangGraph workflow...")
+    
+    # Log environment configuration
+    _log_environment_config()
+    
+    # Create workflow graph
+    workflow = StateGraph(AnalysisState)
+    
+    # Add nodes for each agent
+    workflow.add_node("parse_cv", parse_cv)
+    workflow.add_node("analyze_skills", analyze_skills)
+    workflow.add_node("gather_market_intel", gather_market_intel)
+    workflow.add_node("generate_report", generate_report)
+    
+    # Define execution flow
+    workflow.add_edge("parse_cv", "analyze_skills")
+    workflow.add_edge("analyze_skills", "gather_market_intel") 
+    workflow.add_edge("gather_market_intel", "generate_report")
+    workflow.add_edge("generate_report", END)
+    
+    # Set entry point
+    workflow.set_entry_point("parse_cv")
+    
+    logger.info("LangGraph workflow built successfully")
+    return workflow
+
+
+# Main Execution Function
+def run_analysis(cv_text: str, target_role: str) -> AnalysisState:
+    """
+    Main entry point for CV analysis pipeline.
+    
+    Args:
+        cv_text: Raw CV text content
+        target_role: Target job role for analysis
+        
+    Returns:
+        Final analysis state with complete results
+    """
+    pipeline_start_time = time.time()
+    logger.info("Starting CV Analysis Pipeline")
+    logger.info(f"   Target Role: {target_role}")
+    logger.info(f"   CV Content Length: {len(cv_text)} characters")
+    
+    try:
+        # Create and compile workflow
+        workflow = create_workflow()
+        app = workflow.compile()
+        
+        # Initialize state
+        initial_state = AnalysisState(
+            cv_raw=cv_text,
+            target_role=target_role
         )
-    
-    return SimpleWorkflowOrchestrator()
+        
+        # Execute pipeline
+        logger.info("Executing pipeline...")
+        result_dict = app.invoke(initial_state)
+        
+        # Convert result dict back to AnalysisState object
+        result = AnalysisState(**result_dict)
+        
+        # Log final pipeline status
+        pipeline_time = time.time() - pipeline_start_time
+        logger.info(f"Pipeline completed in {pipeline_time:.2f}s")
+        
+        # Log final status
+        if result.errors:
+            logger.warning(f"Pipeline completed with {len(result.errors)} errors:")
+            for error in result.errors:
+                logger.warning(f"     - {error}")
+        else:
+            logger.info("Pipeline completed successfully with no errors")
+        
+        # Log result summary
+        if result.final_report:
+            logger.info(f"Final report generated: {len(result.final_report)} characters")
+        
+        return result
+        
+    except Exception as e:
+        pipeline_time = time.time() - pipeline_start_time
+        error_msg = f"Pipeline execution failed after {pipeline_time:.2f}s: {str(e)}"
+        logger.error(f"{error_msg}")
+        
+        # Return error state
+        error_state = AnalysisState(
+            cv_raw=cv_text,
+            target_role=target_role,
+            errors=[error_msg]
+        )
+        return error_state

@@ -1,13 +1,12 @@
 """
-Specialized Skill Analyst Agent
-
-This agent performs deep analysis of structured CV data to infer implicit and transferable skills.
-Role: Subject Matter Expert in the multi-agent system.
+## Updated by AI Agent on 2025-09-18
+Specialized Skill Analyst Agent with rule-based core and optional LLM fallback.
 """
 
+import os
 import re
-from typing import List, Dict, Tuple
 import logging
+from typing import List, Dict, Tuple
 from datetime import datetime
 
 from ..schemas import (
@@ -24,6 +23,7 @@ class SkillAnalystAgent:
     
     Analyzes structured CV data to identify implicit skills, transferable skills,
     and seniority indicators with evidence-based reasoning.
+    Supports both rule-based analysis (default) and optional LLM-powered analysis.
     """
     
     def __init__(self):
@@ -143,9 +143,9 @@ class SkillAnalystAgent:
             'scalability', 'performance optimization', 'distributed systems'
         ]
     
-    def analyze_skills(self, state: AnalysisState) -> AnalysisState:
+    def run(self, state: AnalysisState) -> AnalysisState:
         """
-        Main skill analysis function.
+        Main entry point for skill analysis with environment-based mode selection.
         
         Args:
             state: Analysis state with structured CV data
@@ -160,22 +160,16 @@ class SkillAnalystAgent:
                 state.add_error("No structured CV data available for skill analysis")
                 return state
             
-            # Initialize skills analysis
-            analysis = SkillsAnalysis()
+            # Check environment flag for analysis mode
+            use_llm_analyst = os.getenv('USE_LLM_ANALYST', 'false').lower() == 'true'
             
-            # Extract explicit skills
-            analysis.explicit_skills = self._extract_explicit_skills(state.cv_structured)
+            if use_llm_analyst:
+                logger.info("Using LLM-powered analysis mode")
+                state = self.analyze_with_llm(state)
+            else:
+                logger.info("Using rule-based analysis mode")
+                state = self.analyze_with_rules(state)
             
-            # Infer implicit skills
-            analysis.implicit_skills = self._infer_implicit_skills(state.cv_structured)
-            
-            # Identify transferable skills
-            analysis.transferable_skills = self._identify_transferable_skills(state.cv_structured)
-            
-            # Analyze seniority indicators
-            analysis.seniority_indicators = self._analyze_seniority(state.cv_structured)
-            
-            state.skills_analysis = analysis
             logger.info("Skills analysis completed successfully")
             
         except Exception as e:
@@ -184,6 +178,207 @@ class SkillAnalystAgent:
             state.add_error(error_msg)
         
         return state
+    
+    def analyze_with_rules(self, state: AnalysisState) -> AnalysisState:
+        """
+        Rule-based skill analysis using predefined inference rules.
+        
+        Args:
+            state: Analysis state with structured CV data
+            
+        Returns:
+            Updated state with skills analysis
+        """
+        # Initialize skills analysis
+        analysis = SkillsAnalysis()
+        
+        # Extract explicit skills
+        analysis.explicit_skills = self._extract_explicit_skills(state.cv_structured)
+        
+        # Infer implicit skills
+        analysis.implicit_skills = self._infer_implicit_skills(state.cv_structured)
+        
+        # Identify transferable skills
+        analysis.transferable_skills = self._identify_transferable_skills(state.cv_structured)
+        
+        # Analyze seniority indicators
+        analysis.seniority_indicators = self._analyze_seniority(state.cv_structured)
+        
+        state.skills_analysis = analysis
+        return state
+    
+    def analyze_with_llm(self, state: AnalysisState) -> AnalysisState:
+        """
+        LLM-powered skill analysis with fallback to rule-based analysis.
+        
+        Args:
+            state: Analysis state with structured CV data
+            
+        Returns:
+            Updated state with skills analysis
+        """
+        try:
+            # Lazy import LLM client only when needed
+            try:
+                from ..llm_client import LLMClient
+                llm_client = LLMClient()
+            except ImportError:
+                raise ImportError("LLM client module not available. Install required dependencies or implement LLMClient.")
+            
+            # Prepare CV data for LLM analysis
+            cv_text = self._prepare_cv_for_llm(state.cv_structured)
+            
+            # Create analysis prompt
+            prompt = f"""
+            Analyze the following CV data and provide a comprehensive skills analysis in JSON format.
+            
+            CV Data:
+            {cv_text}
+            
+            Please provide analysis in the following JSON structure:
+            {{
+                "explicit_skills": {{
+                    "tech": ["skill1", "skill2"],
+                    "domain": ["skill1", "skill2"],
+                    "soft": ["skill1", "skill2"]
+                }},
+                "implicit_skills": [
+                    {{
+                        "skill": "skill_name",
+                        "evidence": "evidence_text",
+                        "confidence": 0.8
+                    }}
+                ],
+                "transferable_skills": [
+                    {{
+                        "skill": "skill_name",
+                        "from_domain": "domain_name",
+                        "relevance": "relevance_description"
+                    }}
+                ],
+                "seniority_indicators": {{
+                    "years_exp": 5,
+                    "leadership": true,
+                    "architecture": false
+                }}
+            }}
+            """
+            
+            # Generate LLM response
+            response = llm_client.generate(prompt)
+            
+            # Parse JSON response and convert to AnalysisState fields
+            analysis_data = self._parse_llm_response(response)
+            
+            # Create SkillsAnalysis object from parsed data
+            analysis = self._create_skills_analysis_from_llm(analysis_data)
+            
+            state.skills_analysis = analysis
+            logger.info("LLM-powered skills analysis completed successfully")
+            
+        except Exception as e:
+            logger.warning(f"LLM analysis failed: {str(e)}. Falling back to rule-based analysis.")
+            # Fallback to rule-based analysis
+            state = self.analyze_with_rules(state)
+        
+        return state
+    
+    def _prepare_cv_for_llm(self, cv: StructuredCV) -> str:
+        """Prepare CV data as text for LLM analysis."""
+        cv_text = f"""
+        Personal: {cv.personal.name}, {cv.personal.email}
+        
+        Experience:
+        """
+        
+        for exp in cv.experience:
+            cv_text += f"- {exp.title} at {exp.company} ({exp.dates})\n"
+            for bullet in exp.bullets:
+                cv_text += f"  • {bullet}\n"
+        
+        cv_text += "\nSkills:\n"
+        cv_text += f"Languages: {', '.join(cv.skills.languages)}\n"
+        cv_text += f"Frameworks: {', '.join(cv.skills.frameworks)}\n"
+        cv_text += f"Tools: {', '.join(cv.skills.tools)}\n"
+        
+        cv_text += "\nProjects:\n"
+        for project in cv.projects:
+            cv_text += f"- {project.name}: {project.description}\n"
+            cv_text += f"  Tech Stack: {', '.join(project.tech_stack)}\n"
+        
+        cv_text += "\nEducation:\n"
+        for edu in cv.education:
+            cv_text += f"- {edu.degree} from {edu.institution} ({edu.dates})\n"
+        
+        return cv_text
+    
+    def _parse_llm_response(self, response: str) -> Dict:
+        """Parse LLM JSON response with error handling."""
+        import json
+        
+        try:
+            # Try to parse as JSON
+            return json.loads(response)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try to extract JSON from response
+            import re
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+            else:
+                raise ValueError("Could not parse LLM response as JSON")
+    
+    def _create_skills_analysis_from_llm(self, analysis_data: Dict) -> SkillsAnalysis:
+        """Create SkillsAnalysis object from LLM response data."""
+        analysis = SkillsAnalysis()
+        
+        # Set explicit skills
+        analysis.explicit_skills = analysis_data.get('explicit_skills', {
+            'tech': [], 'domain': [], 'soft': []
+        })
+        
+        # Create implicit skills objects
+        implicit_data = analysis_data.get('implicit_skills', [])
+        analysis.implicit_skills = [
+            ImplicitSkill(
+                skill=item['skill'],
+                evidence=item['evidence'],
+                confidence=item['confidence']
+            ) for item in implicit_data
+        ]
+        
+        # Create transferable skills objects
+        transferable_data = analysis_data.get('transferable_skills', [])
+        analysis.transferable_skills = [
+            TransferableSkill(
+                skill=item['skill'],
+                from_domain=item['from_domain'],
+                relevance=item['relevance']
+            ) for item in transferable_data
+        ]
+        
+        # Create seniority indicators
+        seniority_data = analysis_data.get('seniority_indicators', {})
+        analysis.seniority_indicators = SeniorityIndicators(
+            years_exp=seniority_data.get('years_exp', 0),
+            leadership=seniority_data.get('leadership', False),
+            architecture=seniority_data.get('architecture', False)
+        )
+        
+        return analysis
+    
+    def analyze_skills(self, state: AnalysisState) -> AnalysisState:
+        """
+        Legacy method for backward compatibility.
+        Delegates to the new run() method.
+        
+        Args:
+            state: Analysis state with structured CV data
+            
+        Returns:
+            Updated state with comprehensive skills analysis
+        """
+        return self.run(state)
     
     def _extract_explicit_skills(self, cv: StructuredCV) -> Dict[str, List[str]]:
         """Extract explicitly mentioned skills from CV."""
@@ -466,4 +661,4 @@ def skill_analyst_node(state: AnalysisState) -> AnalysisState:
         Updated state with skills analysis
     """
     analyst = SkillAnalystAgent()
-    return analyst.analyze_skills(state)
+    return analyst.run(state)
