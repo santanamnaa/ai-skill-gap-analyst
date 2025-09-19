@@ -32,55 +32,6 @@ The AI Skill Gap Analyst is designed to streamline the recruitment process by pr
 
 ## System Architecture
 
-The platform consists of four specialized AI agents working in coordination:
-
-```mermaid
-graph TD
-    A[CV Upload] --> B[CV Parser Agent]
-    B --> C[Skill Analyst Agent]
-    B --> D[Market Intelligence Agent]
-    C --> E[Report Generator Agent]
-    D --> E
-    E --> F[Analysis Report]
-
-    subgraph "CV Parser Agent"
-        B1[Text Extraction]
-        B2[Regex Pattern Matching]
-        B3[spaCy NER Processing]
-        B1 --> B2
-        B2 --> B3
-    end
-
-    subgraph "Skill Analyst Agent"
-        C1[Rule-based Analysis]
-        C2[LLM Enhancement]
-        C3[Skill Categorization]
-        C1 --> C2
-        C2 --> C3
-    end
-
-    subgraph "Market Intelligence Agent"
-        D1[Static Data Lookup]
-        D2[JSearch API Call]
-        D3[Market Trend Analysis]
-        D1 --> D3
-        D2 --> D3
-    end
-
-    subgraph "Report Generator Agent"
-        E1[Template Processing]
-        E2[Data Integration]
-        E3[Report Formatting]
-        E1 --> E2
-        E2 --> E3
-    end
-
-    B --> B1
-    C --> C1
-    D --> D1
-    E --> E1
-```
-
 ### Multi-Agent Workflow
 
 ```mermaid
