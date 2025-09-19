@@ -4,6 +4,20 @@
 
 A comprehensive solution for HR professionals to automatically analyze CVs, identify skill gaps, and generate actionable insights. Built using LangGraph multi-agent architecture, this system provides detailed candidate assessments in under 30 seconds.
 
+## Video Demo
+
+<div align="center">
+
+### 🎥 System Demonstration
+
+[![AI Skill Gap Analyst Demo](https://img.youtube.com/vi/PLACEHOLDER_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=PLACEHOLDER_VIDEO_ID)
+
+**Click the image above to watch the full demonstration**
+
+_Complete walkthrough showing CV upload, real-time analysis, and report generation_
+
+</div>
+
 ## Overview
 
 The AI Skill Gap Analyst is designed to streamline the recruitment process by providing objective, data-driven analysis of candidate qualifications. The system automatically extracts skills, compares them against market requirements, and generates professional reports with actionable recommendations.
@@ -19,6 +33,84 @@ The AI Skill Gap Analyst is designed to streamline the recruitment process by pr
 ## System Architecture
 
 The platform consists of four specialized AI agents working in coordination:
+
+```mermaid
+graph TD
+    A[CV Upload] --> B[CV Parser Agent]
+    B --> C[Skill Analyst Agent]
+    B --> D[Market Intelligence Agent]
+    C --> E[Report Generator Agent]
+    D --> E
+    E --> F[Analysis Report]
+
+    subgraph "CV Parser Agent"
+        B1[Text Extraction]
+        B2[Regex Pattern Matching]
+        B3[spaCy NER Processing]
+        B1 --> B2
+        B2 --> B3
+    end
+
+    subgraph "Skill Analyst Agent"
+        C1[Rule-based Analysis]
+        C2[LLM Enhancement]
+        C3[Skill Categorization]
+        C1 --> C2
+        C2 --> C3
+    end
+
+    subgraph "Market Intelligence Agent"
+        D1[Static Data Lookup]
+        D2[JSearch API Call]
+        D3[Market Trend Analysis]
+        D1 --> D3
+        D2 --> D3
+    end
+
+    subgraph "Report Generator Agent"
+        E1[Template Processing]
+        E2[Data Integration]
+        E3[Report Formatting]
+        E1 --> E2
+        E2 --> E3
+    end
+
+    B --> B1
+    C --> C1
+    D --> D1
+    E --> E1
+```
+
+### Multi-Agent Workflow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web Interface
+    participant O as Orchestrator
+    participant CP as CV Parser
+    participant SA as Skill Analyst
+    participant MI as Market Intelligence
+    participant RG as Report Generator
+
+    U->>W: Upload CV + Target Role
+    W->>O: Start Analysis
+    O->>CP: Parse CV Data
+    CP-->>O: Structured CV Data
+
+    par Parallel Processing
+        O->>SA: Analyze Skills
+        SA-->>O: Skill Analysis Results
+    and
+        O->>MI: Gather Market Data
+        MI-->>O: Market Intelligence
+    end
+
+    O->>RG: Generate Report
+    RG-->>O: Final Report
+    O-->>W: Analysis Complete
+    W-->>U: Display Results
+```
 
 ### 1. CV Parser Agent
 
@@ -47,6 +139,61 @@ The platform consists of four specialized AI agents working in coordination:
 ## Configuration Options
 
 The system offers five distinct configuration modes to match different organizational needs:
+
+```mermaid
+graph LR
+    subgraph "Configuration Options"
+        A[Option A<br/>Balanced Performance]
+        B[Option B<br/>Maximum Accuracy]
+        C[Option C<br/>High-Volume Processing]
+        D[Option D<br/>Advanced Extraction]
+        E[Option E<br/>Cost-Effective with Live Data]
+    end
+
+    subgraph "AI Models"
+        A1[Local LLM<br/>Ollama]
+        B1[Local LLM<br/>Ollama]
+        C1[Template-based]
+        D1[Local LLM<br/>Ollama]
+        E1[Template-based]
+    end
+
+    subgraph "Data Sources"
+        A2[Static Data]
+        B2[RAG + JSearch API]
+        C2[Static Data]
+        D2[Static Data]
+        E2[RAG + JSearch API]
+    end
+
+    subgraph "Processing Methods"
+        A3[Regex + NER]
+        B3[spaCy NER]
+        C3[Regex Only]
+        D3[LLM Extraction]
+        E3[Regex + NER]
+    end
+
+    A --> A1
+    A --> A2
+    A --> A3
+
+    B --> B1
+    B --> B2
+    B --> B3
+
+    C --> C1
+    C --> C2
+    C --> C3
+
+    D --> D1
+    D --> D2
+    D --> D3
+
+    E --> E1
+    E --> E2
+    E --> E3
+```
 
 | Option | AI Model           | Market Data       | Extraction Method | Analysis Mode     | Processing Time | Accuracy | Best For                          |
 | ------ | ------------------ | ----------------- | ----------------- | ----------------- | --------------- | -------- | --------------------------------- |
@@ -141,6 +288,37 @@ The system offers five distinct configuration modes to match different organizat
 - Less sophisticated than AI options
 
 **Recommended For:** Organizations with budget constraints but need current market data
+
+### Configuration Decision Tree
+
+```mermaid
+flowchart TD
+    Start([Start Configuration Selection]) --> Q1{Need Real-time<br/>Market Data?}
+
+    Q1 -->|Yes| Q2{High Accuracy<br/>Required?}
+    Q1 -->|No| Q3{High Volume<br/>Processing?}
+
+    Q2 -->|Yes| OptionB[Option B<br/>Maximum Accuracy<br/>Local LLM + RAG + spaCy NER]
+    Q2 -->|No| OptionE[Option E<br/>Cost-Effective with Live Data<br/>Template + RAG + Regex + NER]
+
+    Q3 -->|Yes| OptionC[Option C<br/>High-Volume Processing<br/>Template + Static + Regex Only]
+    Q3 -->|No| Q4{Complex Skill<br/>Extraction?}
+
+    Q4 -->|Yes| OptionD[Option D<br/>Advanced Extraction<br/>Local LLM + Static + LLM Extract]
+    Q4 -->|No| OptionA[Option A<br/>Balanced Performance<br/>Local LLM + Static + Regex + NER]
+
+    OptionA --> End1[Deploy & Test]
+    OptionB --> End2[Deploy & Test]
+    OptionC --> End3[Deploy & Test]
+    OptionD --> End4[Deploy & Test]
+    OptionE --> End5[Deploy & Test]
+
+    style OptionA fill:#e1f5fe
+    style OptionB fill:#f3e5f5
+    style OptionC fill:#e8f5e8
+    style OptionD fill:#fff3e0
+    style OptionE fill:#fce4ec
+```
 
 ## Performance Metrics
 
@@ -298,6 +476,73 @@ Recommendation: Strong candidate with 2-3 months upskilling needed
 **AI Integration**: Ollama for local LLM processing
 **External APIs**: JSearch for job market data, OpenAI/Anthropic for enhanced features
 **Data Processing**: Pandas for data manipulation, regex for pattern matching
+
+### Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        UI[Web Interface]
+        CLI[Command Line Interface]
+        API[REST API Client]
+    end
+
+    subgraph "Application Layer"
+        WEB[Flask Web Server]
+        WS[WebSocket Handler]
+        AUTH[Authentication]
+    end
+
+    subgraph "Processing Layer"
+        ORCH[LangGraph Orchestrator]
+        CP[CV Parser Agent]
+        SA[Skill Analyst Agent]
+        MI[Market Intelligence Agent]
+        RG[Report Generator Agent]
+    end
+
+    subgraph "AI/ML Layer"
+        LLM[Ollama Local LLM]
+        SPACY[spaCy NLP Engine]
+        REGEX[Regex Processor]
+    end
+
+    subgraph "Data Layer"
+        STATIC[Static Market Data]
+        CACHE[Analysis Cache]
+        REPORTS[Report Storage]
+    end
+
+    subgraph "External Services"
+        JSEARCH[JSearch API]
+        OPENAI[OpenAI API]
+    end
+
+    UI --> WEB
+    CLI --> WEB
+    API --> WEB
+
+    WEB --> WS
+    WEB --> AUTH
+    WEB --> ORCH
+
+    ORCH --> CP
+    ORCH --> SA
+    ORCH --> MI
+    ORCH --> RG
+
+    CP --> SPACY
+    CP --> REGEX
+    SA --> LLM
+    SA --> REGEX
+    MI --> STATIC
+    MI --> JSEARCH
+    RG --> LLM
+    RG --> CACHE
+
+    LLM --> OPENAI
+    RG --> REPORTS
+```
 
 ## Security and Compliance
 
