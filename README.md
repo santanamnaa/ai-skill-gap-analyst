@@ -10,7 +10,7 @@ A comprehensive solution for HR professionals to automatically analyze CVs, iden
 
 ### 🎥 System Demonstration
 
-[![AI Skill Gap Analyst Demo](https://img.youtube.com/vi/PLACEHOLDER_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=PLACEHOLDER_VIDEO_ID)
+[![AI Skill Gap Analyst Demo](https://www.youtube.com/watch?v=X4c2s7fIF00)
 
 **Click the image above to watch the full demonstration**
 
