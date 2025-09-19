@@ -130,9 +130,9 @@ This project uses `pyproject.toml` as the single source of truth for defining de
     ```
 
 2.  **Create a virtual environment and install dependencies:**
-    The `uv pip sync` command will create a virtual environment (if it doesn't exist) and install the packages from the `uv.lock` file.
+    This project uses `uv` for package management. The following command will create a virtual environment (if it doesn't exist) and install all the necessary dependencies from the `pyproject.toml` file.
     ```bash
-    uv pip sync
+    uv pip sync pyproject.toml --all-extras
     ```
 
 3.  **Activate the virtual environment:**
@@ -140,8 +140,10 @@ This project uses `pyproject.toml` as the single source of truth for defining de
     source .venv/bin/activate
     ```
 
-4.  **Download language models:**
+4.  **Install `pip` and download language models:**
+    The `uv` environment does not include `pip` by default, which is required to download the SpaCy language model.
     ```bash
+    uv pip install pip
     uv run python -m spacy download en_core_web_sm
     ```
 
