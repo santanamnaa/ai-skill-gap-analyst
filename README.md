@@ -10,9 +10,9 @@ A comprehensive solution for HR professionals to automatically analyze CVs, iden
 
 ### 🎥 System Demonstration
 
-[![AI Skill Gap Analyst Demo](https://www.youtube.com/watch?v=X4c2s7fIF00)
+[![Watch the Demo](https://img.shields.io/badge/▶️%20Watch-Demo-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=X4c2s7fIF00)  
 
-**Click the image above to watch the full demonstration**
+**Click above to watch the full demonstration**
 
 _Complete walkthrough showing CV upload, real-time analysis, and report generation_
 
