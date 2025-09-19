@@ -8,15 +8,14 @@ A comprehensive solution for HR professionals to automatically analyze CVs, iden
 
 <div align="center">
 
-### 🎥 System Demonstration
+## System Demonstration
 
-[![Watch the Demo](https://img.shields.io/badge/▶️%20Watch-Demo-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=X4c2s7fIF00)  
+[![Watch the Demo](https://img.youtube.com/vi/X4c2s7fIF00/hqdefault.jpg)](https://www.youtube.com/watch?v=X4c2s7fIF00 "Watch on YouTube")
 
-**Click above to watch the full demonstration**
-
-_Complete walkthrough showing CV upload, real-time analysis, and report generation_
+_Complete walkthrough: CV upload • real-time analysis • report generation_
 
 </div>
+
 
 ## Overview
 
@@ -91,61 +90,6 @@ sequenceDiagram
 
 The system offers five distinct configuration modes to match different organizational needs:
 
-```mermaid
-graph LR
-    subgraph "Configuration Options"
-        A[Option A<br/>Balanced Performance]
-        B[Option B<br/>Maximum Accuracy]
-        C[Option C<br/>High-Volume Processing]
-        D[Option D<br/>Advanced Extraction]
-        E[Option E<br/>Cost-Effective with Live Data]
-    end
-
-    subgraph "AI Models"
-        A1[Local LLM<br/>Ollama]
-        B1[Local LLM<br/>Ollama]
-        C1[Template-based]
-        D1[Local LLM<br/>Ollama]
-        E1[Template-based]
-    end
-
-    subgraph "Data Sources"
-        A2[Static Data]
-        B2[RAG + JSearch API]
-        C2[Static Data]
-        D2[Static Data]
-        E2[RAG + JSearch API]
-    end
-
-    subgraph "Processing Methods"
-        A3[Regex + NER]
-        B3[spaCy NER]
-        C3[Regex Only]
-        D3[LLM Extraction]
-        E3[Regex + NER]
-    end
-
-    A --> A1
-    A --> A2
-    A --> A3
-
-    B --> B1
-    B --> B2
-    B --> B3
-
-    C --> C1
-    C --> C2
-    C --> C3
-
-    D --> D1
-    D --> D2
-    D --> D3
-
-    E --> E1
-    E --> E2
-    E --> E3
-```
-
 | Option | AI Model           | Market Data       | Extraction Method | Analysis Mode     | Processing Time | Accuracy | Best For                          |
 | ------ | ------------------ | ----------------- | ----------------- | ----------------- | --------------- | -------- | --------------------------------- |
 | **A**  | Local LLM (Ollama) | Static Data       | Regex + NER       | Standard Analysis | 15-25 seconds   | 92%      | Balanced performance and accuracy |
@@ -154,122 +98,7 @@ graph LR
 | **D**  | Local LLM (Ollama) | Static Data       | LLM Extraction    | Detailed Analysis | 25-40 seconds   | 94%      | Complex skill extraction          |
 | **E**  | Template-based     | RAG (JSearch API) | Regex + NER       | Standard Analysis | 10-20 seconds   | 88%      | Cost-effective with live data     |
 
-### Detailed Configuration Analysis
 
-#### Option A: Balanced Performance
-
-**Strengths:**
-
-- Optimal balance between speed and accuracy
-- No external API dependencies
-- Reliable offline operation
-- Moderate resource requirements
-
-**Limitations:**
-
-- Static market data may become outdated
-- Limited to predefined skill patterns
-
-**Recommended For:** Standard recruitment processes where consistent performance is prioritized
-
-#### Option B: Maximum Accuracy
-
-**Strengths:**
-
-- Highest accuracy with real-time market data
-- Advanced NLP processing
-- Most comprehensive analysis
-- Up-to-date market insights
-
-**Limitations:**
-
-- Requires API key and internet connection
-- Higher processing time
-- Increased resource consumption
-
-**Recommended For:** Executive-level positions and critical hiring decisions
-
-#### Option C: High-Volume Processing
-
-**Strengths:**
-
-- Fastest processing time
-- Minimal resource requirements
-- No external dependencies
-- Cost-effective for bulk processing
-
-**Limitations:**
-
-- Lower accuracy for complex CVs
-- Basic skill extraction only
-- Limited market insights
-
-**Recommended For:** Initial screening and high-volume recruitment campaigns
-
-#### Option D: Advanced Skill Extraction
-
-**Strengths:**
-
-- AI-powered skill identification
-- Handles complex and non-standard CVs
-- Detailed analysis capabilities
-- Good accuracy for technical roles
-
-**Limitations:**
-
-- Longer processing time
-- Higher computational requirements
-- Static market data
-
-**Recommended For:** Technical positions requiring deep skill analysis
-
-#### Option E: Cost-Effective with Live Data
-
-**Strengths:**
-
-- Real-time market data without AI costs
-- Good balance of speed and insights
-- Reliable performance
-- Moderate resource usage
-
-**Limitations:**
-
-- Template-based analysis limitations
-- Requires API access
-- Less sophisticated than AI options
-
-**Recommended For:** Organizations with budget constraints but need current market data
-
-### Configuration Decision Tree
-
-```mermaid
-flowchart TD
-    Start([Start Configuration Selection]) --> Q1{Need Real-time<br/>Market Data?}
-
-    Q1 -->|Yes| Q2{High Accuracy<br/>Required?}
-    Q1 -->|No| Q3{High Volume<br/>Processing?}
-
-    Q2 -->|Yes| OptionB[Option B<br/>Maximum Accuracy<br/>Local LLM + RAG + spaCy NER]
-    Q2 -->|No| OptionE[Option E<br/>Cost-Effective with Live Data<br/>Template + RAG + Regex + NER]
-
-    Q3 -->|Yes| OptionC[Option C<br/>High-Volume Processing<br/>Template + Static + Regex Only]
-    Q3 -->|No| Q4{Complex Skill<br/>Extraction?}
-
-    Q4 -->|Yes| OptionD[Option D<br/>Advanced Extraction<br/>Local LLM + Static + LLM Extract]
-    Q4 -->|No| OptionA[Option A<br/>Balanced Performance<br/>Local LLM + Static + Regex + NER]
-
-    OptionA --> End1[Deploy & Test]
-    OptionB --> End2[Deploy & Test]
-    OptionC --> End3[Deploy & Test]
-    OptionD --> End4[Deploy & Test]
-    OptionE --> End5[Deploy & Test]
-
-    style OptionA fill:#e1f5fe
-    style OptionB fill:#f3e5f5
-    style OptionC fill:#e8f5e8
-    style OptionD fill:#fff3e0
-    style OptionE fill:#fce4ec
-```
 
 ## Performance Metrics
 
@@ -531,3 +360,5 @@ graph TB
 ---
 
 **Built for modern HR teams - A complete solution for data-driven recruitment and talent assessment.**
+> **I am ready to give my best and leverage all my capabilities to contribute as an AI Engineer at Krenovator.**
+> *I am always passionate about improving myself and increasing my potential skills in this field.*
