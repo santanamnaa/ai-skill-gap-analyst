@@ -11,19 +11,24 @@ import logging
 import sys
 from pathlib import Path
 from typing import Optional
+import os
+from dotenv import load_dotenv
 
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+# Load environment variables from .env file
+load_dotenv()
+
 from src.orchestrator.workflow import run_analysis
 from src.schemas import AnalysisState
 
-# Initialize Typer app and Rich console
+# I'm using Typer to create a command-line interface and Rich to display nice console output.
 app = typer.Typer(
     name="ai-skill-gap-analyst",
-    help="AI-powered CV skill gap analysis system using LangGraph",
+    help="A CV skill gap analysis system I built using LangGraph.",
     add_completion=False
 )
 console = Console()
@@ -44,32 +49,20 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def load_cv_file(cv_path: str) -> str:
-    """
-    Load CV content from file (supports both text and PDF files).
-    
-    Args:
-        cv_path: Path to CV file
-        
-    Returns:
-        CV content as string
-        
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        ValueError: If file is empty or invalid
-    """
+    # This function handles loading the CV content. It can take both text and PDF files.
     cv_file = Path(cv_path)
     
     if not cv_file.exists():
         raise FileNotFoundError(f"CV file not found: {cv_path}")
     
     if not cv_file.is_file():
-        raise ValueError(f"Path is not a file: {cv_path}")
+        raise ValueError(f"The path provided is not a file: {cv_path}")
     
-    # Check file extension to determine processing method
+    # I check the file extension to decide how to process it.
     file_extension = cv_file.suffix.lower()
     
     if file_extension == '.pdf':
-        # Extract text from PDF
+        # For PDFs, I'm trying pdfplumber first as it's generally better.
         try:
             import pdfplumber
             
@@ -83,12 +76,12 @@ def load_cv_file(cv_path: str) -> str:
                 content = content.strip()
                 
                 if not content:
-                    raise ValueError("PDF file appears to be empty or contains no extractable text")
+                    raise ValueError("This PDF seems to be empty or has no text.")
                 
                 return content
                 
         except ImportError:
-            # Fallback to PyPDF2 if pdfplumber not available
+            # If pdfplumber isn't installed, I'll try PyPDF2 as a fallback.
             try:
                 import PyPDF2
                 
@@ -104,44 +97,35 @@ def load_cv_file(cv_path: str) -> str:
                     content = content.strip()
                     
                     if not content:
-                        raise ValueError("PDF file appears to be empty or contains no extractable text")
+                        raise ValueError("This PDF seems to be empty or has no text.")
                     
                     return content
                     
             except ImportError:
-                raise ValueError(
-                    "PDF processing requires 'pdfplumber' or 'PyPDF2' package. "
-                    "Install with: uv add pdfplumber"
-                )
+                raise ValueError("To process PDFs, you need to install either 'pdfplumber' or 'PyPDF2'.")
         except Exception as e:
-            raise ValueError(f"Failed to extract text from PDF: {str(e)}")
+            raise ValueError(f"Failed to get text from the PDF: {str(e)}")
     
     else:
-        # Handle text files
+        # For other file types, I'll just treat them as plain text.
         try:
             with open(cv_file, 'r', encoding='utf-8') as f:
                 content = f.read().strip()
             
             if not content:
-                raise ValueError("CV file is empty")
+                raise ValueError("The CV file is empty.")
             
             return content
             
         except UnicodeDecodeError:
-            raise ValueError("CV file contains invalid characters. Please ensure it's a text file.")
+            raise ValueError("The file seems to have some invalid characters. Make sure it's a plain text file.")
 
 
 def save_report(report_content: str, output_path: str) -> None:
-    """
-    Save analysis report to file.
-    
-    Args:
-        report_content: Generated report content
-        output_path: Path to save the report
-    """
+    # A simple helper function to save the final report to a file.
     output_file = Path(output_path)
     
-    # Create parent directories if they don't exist
+    # I'm making sure the directory exists before I try to write the file.
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
     try:
@@ -151,7 +135,7 @@ def save_report(report_content: str, output_path: str) -> None:
         print(f"Report saved to: {output_file.absolute()}")
         
     except Exception as e:
-        print(f"Failed to save report: {str(e)}")
+        print(f"Couldn't save the report: {str(e)}")
         sys.exit(1)
 
 
@@ -216,15 +200,14 @@ def print_analysis_summary(state: AnalysisState) -> None:
 
 @app.command()
 def analyze(
-    cv_path: Path = typer.Argument(..., help="Path to CV file (.txt)", exists=True, file_okay=True, dir_okay=False),
-    role: str = typer.Argument(..., help="Target role (e.g., 'Senior AI Engineer')"),
-    output: Path = typer.Option("report.md", "--output", "-o", help="Output report file path"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
-    use_simple: bool = typer.Option(False, "--simple", help="Use simple orchestrator instead of LangGraph")
+    cv_path: Path = typer.Argument(..., help="Path to the CV file.", exists=True, file_okay=True, dir_okay=False),
+    role: str = typer.Argument(..., help="The target role, like 'Senior AI Engineer'."),
+    output: Path = typer.Option("report.md", "--output", "-o", help="Where to save the report."),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable more detailed logging."),
+    use_simple: bool = typer.Option(False, "--simple", help="Use a simpler, non-LangGraph orchestrator.")
 ):
-    """Analyze CV and generate skill gap report using LangGraph."""
+    # This is the main command for the CLI.
     
-    # Setup logging
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
     
@@ -234,58 +217,57 @@ def analyze(
     console.print(f"Output: {output}")
     
     try:
-        # Load CV content
+        # First, load the CV content from the file.
         console.print("\nLoading CV content...")
         cv_content = load_cv_file(str(cv_path))
-        logger.info(f"Loaded CV with {len(cv_content)} characters")
+        logger.info(f"Loaded a CV with {len(cv_content)} characters.")
         
-        # Run analysis workflow with progress indicator
-        console.print("Running analysis workflow...")
+        # Then, run the analysis workflow.
+        console.print("Running the analysis workflow...")
         
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task("Running analysis pipeline...", total=None)
+            task = progress.add_task("Running the analysis pipeline...", total=None)
             result_state = run_analysis(cv_content, role)
             progress.update(task, completed=True)
         
-        # Print summary
+        # Show a summary in the console.
         print_analysis_summary(result_state)
         
-        # Save report
+        # And save the full report to a file.
         if result_state.final_report:
             console.print(f"\nSaving report to {output}...")
             save_report(result_state.final_report, str(output))
         else:
-            console.print("No report generated due to errors", style="bold red")
+            console.print("No report was generated, likely due to errors.", style="bold red")
             if result_state.errors:
-                console.print("Errors encountered:")
+                console.print("Errors found:")
                 for error in result_state.errors:
-                    console.print(f"  • {error}")
+                    console.print(f"  - {error}")
             raise typer.Exit(1)
         
-        # Success message
-        console.print("\nAnalysis completed successfully!", style="bold green")
-        console.print(f"View your personalized skill gap analysis in: {output}")
+        console.print("\nAnalysis complete!", style="bold green")
+        console.print(f"You can find the report in: {output}")
         
     except FileNotFoundError as e:
-        console.print(f"File Error: {str(e)}", style="bold red")
+        console.print(f"Error: {str(e)}", style="bold red")
         raise typer.Exit(1)
     
     except ValueError as e:
-        console.print(f"Input Error: {str(e)}", style="bold red")
+        console.print(f"Error: {str(e)}", style="bold red")
         raise typer.Exit(1)
     
     except KeyboardInterrupt:
-        console.print("\nAnalysis interrupted by user")
+        console.print("\nAnalysis stopped by user.")
         raise typer.Exit(1)
     
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
-        console.print(f"Unexpected Error: {str(e)}", style="bold red")
-        console.print("Check analysis.log for detailed error information")
+        logger.error(f"An unexpected error occurred: {str(e)}", exc_info=True)
+        console.print(f"An unexpected error occurred: {str(e)}", style="bold red")
+        console.print("Check the analysis.log file for more details.")
         raise typer.Exit(1)
 
 

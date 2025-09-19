@@ -30,7 +30,7 @@ class CVParserAgent:
     
     def __init__(self):
         # Environment configuration
-        self.use_spacy = os.getenv('USE_SPACY_PARSER', 'false').lower() == 'true'
+        self.use_spacy = os.getenv('USE_SPACY_PARSER', 'true').lower() == 'true'
         self._spacy_nlp = None  # Lazy-loaded spaCy model
         
         # Load configuration from JSON file

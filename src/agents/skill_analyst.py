@@ -161,7 +161,7 @@ class SkillAnalystAgent:
                 return state
             
             # Check environment flag for analysis mode
-            use_llm_analyst = os.getenv('USE_LLM_ANALYST', 'false').lower() == 'true'
+            use_llm_analyst = os.getenv('USE_LLM_ANALYST', 'true').lower() == 'true'
             
             if use_llm_analyst:
                 logger.info("Using LLM-powered analysis mode")
@@ -285,8 +285,10 @@ class SkillAnalystAgent:
     
     def _prepare_cv_for_llm(self, cv: StructuredCV) -> str:
         """Prepare CV data as text for LLM analysis."""
+        # Get email from contact dict if available
+        email = cv.personal.contact.get('email', 'Not provided')
         cv_text = f"""
-        Personal: {cv.personal.name}, {cv.personal.email}
+        Personal: {cv.personal.name}, {email}
         
         Experience:
         """

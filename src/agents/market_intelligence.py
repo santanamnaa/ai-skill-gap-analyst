@@ -33,7 +33,7 @@ class MarketIntelligenceAgent:
         self.market_data = self._load_market_data()
         
         # Environment configuration
-        self.use_rag = os.getenv('USE_RAG', 'false').lower() == 'true'
+        self.use_rag = os.getenv('USE_RAG', 'true').lower() == 'true'
         
         # Role mapping for flexible matching
         self.role_mappings = {
@@ -114,7 +114,7 @@ class MarketIntelligenceAgent:
     
     def gather_with_rag(self, state: AnalysisState) -> AnalysisState:
         """
-        RAG-powered market intelligence gathering with fallback to static data.
+        RAG-powered market intelligence gathering using JSearch API (RapidAPI).
         
         Args:
             state: Analysis state with target role
@@ -123,23 +123,287 @@ class MarketIntelligenceAgent:
             Updated state with market intelligence data
         """
         try:
-            # This would implement RAG queries to vector DB or external APIs
-            # For now, this is a stub that demonstrates the architecture
-            logger.info(f"RAG mode: Querying vector database for role: {state.target_role}")
+            logger.info(f"RAG mode: Querying JSearch API for role: {state.target_role}")
             
-            # Placeholder for RAG implementation:
-            # 1. Query vector database for similar roles
-            # 2. Retrieve relevant job postings and requirements
-            # 3. Use LLM to synthesize market intelligence
-            # 4. Convert to MarketIntelligence schema
+            # Get API credentials from environment
+            rapidapi_key = os.getenv('RAPIDAPI_KEY')
+            if not rapidapi_key:
+                logger.warning("RAPIDAPI_KEY not found. Falling back to static data.")
+                return self.gather_with_static_data(state)
             
-            # For demonstration, we'll simulate RAG failure and fallback
-            raise NotImplementedError("RAG implementation not yet available")
+            # Try multiple search strategies for better results
+            job_data = self._fetch_job_data_with_fallback(state.target_role, rapidapi_key)
+            
+            if not job_data or len(job_data.get('data', [])) == 0:
+                logger.warning(f"No job data found for role: {state.target_role}")
+                return self.gather_with_static_data(state)
+            
+            # Parse job postings to extract market intelligence
+            market_intel = self._parse_job_data_to_market_intelligence(job_data, state.target_role)
+            
+            state.market_intelligence = market_intel
+            logger.info(f"RAG analysis completed for {len(job_data.get('data', []))} job postings")
+            
+            return state
             
         except Exception as e:
             logger.warning(f"RAG market intelligence failed: {str(e)}. Falling back to static data.")
             # Fallback to static data analysis
             return self.gather_with_static_data(state)
+
+    def _fetch_job_data_with_fallback(self, role: str, api_key: str) -> Dict:
+        """
+        Fetch job data with multiple search strategies and fallback queries.
+        
+        Args:
+            role: Target job role
+            api_key: RapidAPI key
+            
+        Returns:
+            Job data from API with best available results
+        """
+        # Define search strategies based on role
+        search_queries = self._generate_search_queries(role)
+        
+        best_result = None
+        max_jobs = 0
+        
+        for query in search_queries:
+            try:
+                logger.info(f"Trying search query: '{query}'")
+                result = self._fetch_jsearch_data_single(query, api_key)
+                
+                if result and len(result.get('data', [])) > max_jobs:
+                    max_jobs = len(result.get('data', []))
+                    best_result = result
+                    logger.info(f"Found {max_jobs} jobs with query: '{query}'")
+                    
+                    # If we found enough jobs, use this result
+                    if max_jobs >= 10:
+                        break
+                        
+            except Exception as e:
+                logger.warning(f"Search query '{query}' failed: {str(e)}")
+                continue
+        
+        return best_result or {'data': []}
+
+    def _generate_search_queries(self, role: str) -> List[str]:
+        """
+        Generate multiple search queries for better job matching.
+        
+        Args:
+            role: Target role
+            
+        Returns:
+            List of search queries to try
+        """
+        role_lower = role.lower().strip()
+        queries = []
+        
+        # Role mapping for non-English terms
+        role_translations = {
+            'kedokteran': ['doctor', 'physician', 'medical doctor', 'healthcare professional'],
+            'dokter': ['doctor', 'physician', 'medical practitioner'],
+            'perawat': ['nurse', 'registered nurse', 'healthcare nurse'],
+            'apoteker': ['pharmacist', 'pharmacy', 'pharmaceutical'],
+            'bidan': ['midwife', 'obstetric nurse', 'maternal health'],
+            'psikolog': ['psychologist', 'mental health', 'clinical psychology'],
+            'fisioterapi': ['physiotherapist', 'physical therapy', 'rehabilitation'],
+            'radiologi': ['radiologist', 'medical imaging', 'radiology technician'],
+            'laboratorium': ['medical laboratory', 'lab technician', 'clinical laboratory'],
+            'gizi': ['nutritionist', 'dietitian', 'clinical nutrition']
+        }
+        
+        # Tech role variations
+        tech_variations = {
+            'ai engineer': ['artificial intelligence engineer', 'machine learning engineer', 'ai developer'],
+            'data scientist': ['data analyst', 'data engineer', 'business intelligence'],
+            'backend engineer': ['backend developer', 'server developer', 'api developer'],
+            'frontend engineer': ['frontend developer', 'ui developer', 'web developer'],
+            'devops engineer': ['devops', 'site reliability engineer', 'infrastructure engineer'],
+            'mobile engineer': ['mobile developer', 'ios developer', 'android developer']
+        }
+        
+        # 1. Original role
+        queries.append(f"{role} jobs")
+        
+        # 2. Try translations if available
+        if role_lower in role_translations:
+            for translation in role_translations[role_lower]:
+                queries.append(f"{translation} jobs")
+        
+        # 3. Try tech variations if available  
+        if role_lower in tech_variations:
+            for variation in tech_variations[role_lower]:
+                queries.append(f"{variation} jobs")
+        
+        # 4. Generic fallbacks based on keywords
+        if any(keyword in role_lower for keyword in ['engineer', 'developer', 'programmer']):
+            queries.extend(['software engineer jobs', 'developer jobs'])
+        elif any(keyword in role_lower for keyword in ['doctor', 'medical', 'health']):
+            queries.extend(['healthcare jobs', 'medical professional jobs'])
+        elif any(keyword in role_lower for keyword in ['data', 'analyst', 'science']):
+            queries.extend(['data analyst jobs', 'business analyst jobs'])
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_queries = []
+        for query in queries:
+            if query not in seen:
+                seen.add(query)
+                unique_queries.append(query)
+        
+        return unique_queries[:5]  # Limit to 5 queries to avoid rate limits
+
+    def _fetch_jsearch_data_single(self, query: str, api_key: str) -> Dict:
+        """
+        Fetch job data from JSearch API for a single query.
+        
+        Args:
+            query: Search query
+            api_key: RapidAPI key
+            
+        Returns:
+            Job data from API
+        """
+        url = "https://jsearch.p.rapidapi.com/search"
+        
+        querystring = {
+            "query": query,
+            "page": "1",
+            "num_pages": "1",
+            "date_posted": "month"
+        }
+        
+        headers = {
+            "X-RapidAPI-Key": api_key,
+            "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+        }
+        
+        response = requests.get(url, headers=headers, params=querystring, timeout=30)
+        
+        # Log API usage info
+        remaining_requests = response.headers.get('X-RateLimit-Remaining', 'Unknown')
+        logger.info(f"API requests remaining: {remaining_requests}")
+        
+        response.raise_for_status()
+        return response.json()
+
+    def _parse_job_data_to_market_intelligence(self, job_data: Dict, target_role: str) -> MarketIntelligence:
+        """
+        Parse job postings data to extract market intelligence.
+        
+        Args:
+            job_data: Raw job data from API
+            target_role: Target role for context
+            
+        Returns:
+            MarketIntelligence object with extracted data
+        """
+        jobs = job_data.get('data', [])
+        
+        # Extract skills from job descriptions
+        all_skills = set()
+        core_skills = set()
+        preferred_skills = set()
+        emerging_trends = set()
+        
+        # Salary data collection
+        salaries = []
+        
+        # Technology stack tracking
+        languages = set()
+        frameworks = set()
+        tools = set()
+        
+        # Skill keywords for different categories
+        skill_keywords = {
+            'languages': ['python', 'java', 'javascript', 'typescript', 'go', 'rust', 'c++', 'c#', 'php', 'ruby', 'swift', 'kotlin'],
+            'frameworks': ['react', 'angular', 'vue', 'django', 'flask', 'spring', 'express', 'laravel', 'rails'],
+            'tools': ['docker', 'kubernetes', 'git', 'jenkins', 'aws', 'azure', 'gcp', 'terraform', 'ansible'],
+            'databases': ['postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch'],
+            'emerging': ['ai', 'machine learning', 'blockchain', 'microservices', 'devops', 'cloud native']
+        }
+        
+        for job in jobs[:20]:  # Analyze top 20 jobs
+            description = job.get('job_description', '').lower()
+            title = job.get('job_title', '').lower()
+            
+            # Extract salary if available
+            salary_min = job.get('job_min_salary')
+            salary_max = job.get('job_max_salary')
+            if salary_min and salary_max:
+                salaries.append((salary_min, salary_max))
+            
+            # Extract skills from description and title
+            combined_text = f"{title} {description}"
+            
+            # Categorize skills
+            for category, keywords in skill_keywords.items():
+                for keyword in keywords:
+                    if keyword in combined_text:
+                        if category == 'languages':
+                            languages.add(keyword.title())
+                        elif category == 'frameworks':
+                            frameworks.add(keyword.title())
+                        elif category == 'tools':
+                            tools.add(keyword.title())
+                        elif category == 'emerging':
+                            emerging_trends.add(keyword.title())
+                        
+                        # Determine if core or preferred based on frequency
+                        if combined_text.count(keyword) >= 2 or keyword in title:
+                            core_skills.add(keyword.title())
+                        else:
+                            preferred_skills.add(keyword.title())
+        
+        # Calculate salary range
+        if salaries:
+            min_salaries = [s[0] for s in salaries]
+            max_salaries = [s[1] for s in salaries]
+            avg_min = sum(min_salaries) // len(min_salaries)
+            avg_max = sum(max_salaries) // len(max_salaries)
+            salary_range = f"${avg_min:,} - ${avg_max:,}"
+        else:
+            salary_range = "Salary data not available"
+        
+        # Determine demand level based on number of jobs found
+        job_count = len(jobs)
+        if job_count >= 50:
+            demand_level = "Very High"
+        elif job_count >= 20:
+            demand_level = "High"
+        elif job_count >= 10:
+            demand_level = "Medium"
+        else:
+            demand_level = "Low"
+        
+        # Create market intelligence object
+        role_requirements = RoleRequirements(
+            core_skills=list(core_skills)[:10],  # Top 10 core skills
+            preferred_skills=list(preferred_skills)[:10],  # Top 10 preferred skills
+            emerging_trends=list(emerging_trends)[:5]  # Top 5 trends
+        )
+        
+        tech_stack = TechStackPopularity(
+            language=list(languages)[:5],
+            framework=list(frameworks)[:5],
+            tools=list(tools)[:5]
+        )
+        
+        market_insights = MarketInsights(
+            salary_range=salary_range,
+            demand_level=demand_level,
+            growth_areas=list(emerging_trends)[:3]
+        )
+        
+        return MarketIntelligence(
+            role_requirements=role_requirements,
+            tech_stack_popularity=tech_stack,
+            market_insights=market_insights,
+            source="jsearch_api"
+        )
     
     def gather_market_intelligence(self, state: AnalysisState) -> AnalysisState:
         """
@@ -476,6 +740,10 @@ class MarketIntelligenceAgent:
         elif any(keyword in role_lower for keyword in ['devops', 'infrastructure', 'cloud']):
             core_skills.extend(["Infrastructure as Code", "CI/CD", "Containerization"])
             frameworks.extend(["Terraform", "Kubernetes", "Jenkins"])
+        
+        elif any(keyword in role_lower for keyword in ['mobile', 'ios', 'android']):
+            core_skills.extend(["Mobile Development", "iOS Development", "Android Development"])
+            frameworks.extend(["React Native", "Flutter", "Xamarin"])
         
         # Create market intelligence object
         role_req = RoleRequirements(

@@ -8,6 +8,7 @@ import os
 import logging
 import time
 from typing import Dict, Any
+from datetime import datetime
 from langgraph.graph import StateGraph, END
 from ..schemas import AnalysisState
 from ..agents.cv_parser import CVParserAgent
@@ -22,10 +23,10 @@ logger = logging.getLogger(__name__)
 def _log_environment_config() -> None:
     """Log active environment configuration at startup."""
     config = {
-        'USE_SPACY_PARSER': os.getenv('USE_SPACY_PARSER', 'false'),
-        'USE_LLM_ANALYST': os.getenv('USE_LLM_ANALYST', 'false'),
-        'USE_RAG': os.getenv('USE_RAG', 'false'),
-        'USE_LLM_REPORT': os.getenv('USE_LLM_REPORT', 'false')
+        'USE_SPACY_PARSER': os.getenv('USE_SPACY_PARSER', 'true'),
+        'USE_LLM_ANALYST': os.getenv('USE_LLM_ANALYST', 'true'),
+        'USE_RAG': os.getenv('USE_RAG', 'true'),
+        'USE_LLM_REPORT': os.getenv('USE_LLM_REPORT', 'true')
     }
     
     logger.info("Active Environment Configuration:")
@@ -310,3 +311,31 @@ def run_analysis(cv_text: str, target_role: str) -> AnalysisState:
             errors=[error_msg]
         )
         return error_state
+
+
+class CVAnalysisWorkflow:
+    """
+    Main workflow class for CV Analysis.
+    Provides a clean interface for the web application.
+    """
+    
+    def __init__(self):
+        """Initialize the workflow."""
+        self.logger = logging.getLogger(__name__)
+    
+    def analyze(self, cv_text: str, target_role: str) -> AnalysisState:
+        """
+        Run the complete CV analysis workflow.
+        
+        Args:
+            cv_text: Raw CV text content
+            target_role: Target job role for analysis
+            
+        Returns:
+            AnalysisState: Complete analysis results
+        """
+        return run_analysis(cv_text, target_role)
+    
+    def create_workflow_graph(self):
+        """Create and return the LangGraph workflow."""
+        return create_workflow()

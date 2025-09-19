@@ -111,7 +111,7 @@ class LLMClient:
             import ollama
             self.client = ollama.Client()
             self.provider = "ollama"
-            self.model = self.model or "llama3.2"
+            self.model = self.model or "qwen2:1.5b"
             
         except ImportError:
             raise ImportError("Ollama package not installed. Run: uv add ollama")

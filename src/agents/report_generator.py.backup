@@ -84,7 +84,7 @@ class ReportGeneratorAgent:
                 return state
             
             # Check environment flag for generation mode
-            use_llm_report = os.getenv('USE_LLM_REPORT', 'true').lower() == 'true'
+            use_llm_report = os.getenv('USE_LLM_REPORT', 'false').lower() == 'true'
             
             if use_llm_report:
                 logger.info("Using LLM-powered report generation mode")
@@ -608,7 +608,10 @@ The market is particularly focused on: {', '.join(market.market_insights.growth_
             goals.append(f"- Master {skill} fundamentals and complete hands-on project")
         
         return '\n'.join(goals)
-    
+
+
+def report_generator_node(state: AnalysisState) -> AnalysisState:
+
     def _is_ollama_available(self) -> bool:
         """Check if Ollama is available and running."""
         try:
@@ -639,10 +642,10 @@ The market is particularly focused on: {', '.join(market.market_insights.growth_
             # Create a comprehensive prompt
             prompt = self._create_llm_prompt(context_data)
             
-            # Call Ollama with available model
+            # Call Ollama with Qwen model (or default if Qwen not available)
             try:
                 response = ollama.chat(
-                    model='qwen2:1.5b',  # Use smaller Qwen model for faster processing
+                    model='qwen2.5:14b',  # Try Qwen first
                     messages=[
                         {
                             'role': 'system',
@@ -656,9 +659,9 @@ The market is particularly focused on: {', '.join(market.market_insights.growth_
                 )
                 return response['message']['content']
             except Exception:
-                # Fallback to llama3.1 if qwen not available
+                # Fallback to llama3 if qwen not available
                 response = ollama.chat(
-                    model='llama3.1:latest',
+                    model='llama3',
                     messages=[
                         {
                             'role': 'system',

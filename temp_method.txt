@@ -1,0 +1,12 @@
+    def _is_ollama_available(self) -> bool:
+        """Check if Ollama is available and running."""
+        try:
+            import ollama
+            # Try to connect to Ollama
+            logger.info("Attempting to connect to Ollama...")
+            response = ollama.list()
+            logger.info("Ollama connection successful")
+            return True
+        except Exception as e:
+            logger.warning(f"Ollama connection failed: {str(e)}")
+            return False

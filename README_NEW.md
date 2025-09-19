@@ -697,18 +697,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **RapidAPI** for market intelligence data
 - **Flask Team** for the lightweight web framework
 
-## 📚 Complete Documentation
-
-For comprehensive documentation, visit our [Documentation Hub](docs/README.md):
-
-- **[Architecture Documentation](docs/architecture.md)** - System design and patterns
-- **[Tech Stack Details](docs/tech_stack.md)** - Complete technology breakdown
-- **[Accuracy Analysis](docs/accuracy_analysis.md)** - Performance metrics and benchmarks
-- **[Usage Guide](docs/usage_guide.md)** - Detailed usage instructions
-
 ## 📞 Support
 
-- **Documentation**: [Complete Documentation Hub](docs/README.md)
+- **Documentation**: [Project Wiki](https://github.com/your-username/ai-skill-gap-analyst/wiki)
 - **Issues**: [GitHub Issues](https://github.com/your-username/ai-skill-gap-analyst/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-username/ai-skill-gap-analyst/discussions)
 - **Email**: support@ai-skill-gap-analyst.com
