@@ -115,6 +115,7 @@ The system offers five distinct configuration modes to match different organizat
 ### Prerequisites
 
 - Python 3.9 or higher
+- [uv](https://github.com/astral-sh/uv)
 - 4GB RAM minimum (8GB recommended)
 - Internet connection (for options B and E)
 
@@ -125,14 +126,23 @@ The system offers five distinct configuration modes to match different organizat
 git clone https://github.com/santanamnaa/ai-skill-gap-analyst.git
 cd ai-skill-gap-analyst
 
+# Create a virtual environment
+uv venv
+
+# Activate the virtual environment
+# On Windows
+.venv\Scripts\activate
+# On macOS/Linux
+source .venv/bin/activate
+
 # Install dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 # Download language models
-python -m spacy download en_core_web_sm
+uv run python -m spacy download en_core_web_sm
 
 # Start the application
-python app.py
+uv run python app.py
 ```
 
 ### Configuration
@@ -197,13 +207,13 @@ OPENAI_API_KEY=your_openai_key_here
 
 ```bash
 # Basic analysis
-python main.py analyze path/to/cv.pdf "Senior Developer"
+uv run python main.py analyze path/to/cv.pdf "Senior Developer"
 
 # Enhanced analysis with specific configuration
-USE_LLM_ANALYST=true python main.py analyze cv.pdf "Data Scientist"
+USE_LLM_ANALYST=true uv run python main.py analyze cv.pdf "Data Scientist"
 
 # Batch processing
-python scripts/batch_analyze.py --input-dir cvs/ --role "Engineer"
+uv run python scripts/batch_analyze.py --input-dir cvs/ --role "Engineer"
 ```
 
 ### API Integration
