@@ -153,43 +153,34 @@ uv run python app.py
 cp .env.example .env
 ```
 
-2. Configure your preferred option by setting environment variables:
+2. Configure features and API keys in the `.env` file.
+
+Enable the desired features by setting the corresponding variables to `true`.
 
 ```bash
-# For Option A (Default)
-USE_LLM_ANALYST=true
-USE_RAG=false
-USE_SPACY_PARSER=false
-
-# For Option B (Maximum Accuracy)
+# Enable or disable features. Set to true to activate.
 USE_LLM_ANALYST=true
 USE_RAG=true
 USE_SPACY_PARSER=true
-
-# For Option C (Fast Processing)
-USE_LLM_ANALYST=false
-USE_RAG=false
-USE_SPACY_PARSER=false
-
-# For Option D (Advanced Extraction)
-USE_LLM_ANALYST=true
-USE_RAG=false
-USE_SPACY_PARSER=false
-
-# For Option E (Cost-Effective with Live Data)
-USE_LLM_ANALYST=false
-USE_RAG=true
-USE_SPACY_PARSER=false
 ```
 
-3. Add API keys for enhanced features (optional):
+To use features that require external APIs, add your API keys.
 
 ```bash
-# For JSearch API (Options B and E)
+# Add your API keys for enhanced features
+
+# For Large Language Models (OpenAI, Anthropic)
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# For live job market data (JSearch via RapidAPI)
+# Get your key from https://rapidapi.com/jsearch/api/jsearch
 RAPIDAPI_KEY=your_rapidapi_key_here
 
-# For OpenAI integration (if needed)
-OPENAI_API_KEY=your_openai_key_here
+# For LinkedIn integration (optional)
+# Register a developer application on the LinkedIn Developer Platform
+LINKEDIN_API_KEY=your_linkedin_api_key_here
+LINKEDIN_API_SECRET=your_linkedin_api_secret_here
 ```
 
 ## Usage Guide
