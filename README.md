@@ -122,7 +122,7 @@ The system offers five distinct configuration modes to match different organizat
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/santanamnaa/ai-skill-gap-analyst.git
 cd ai-skill-gap-analyst
 
 # Install dependencies
