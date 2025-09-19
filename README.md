@@ -130,9 +130,8 @@ This project uses `pyproject.toml` as the single source of truth for defining de
     ```
 
 2.  **Create a virtual environment and install dependencies:**
-    This project uses `uv` for package management. The following command will create a virtual environment (if it doesn't exist) and install all the necessary dependencies from the `pyproject.toml` file.
     ```bash
-    uv pip sync pyproject.toml --all-extras
+    uv sync --all-extras
     ```
 
 3.  **Activate the virtual environment:**
