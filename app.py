@@ -5,9 +5,7 @@ Provides web interface for HR to review CV analysis.
 """
 
 import os
-import json
 import logging
-import asyncio
 import tempfile
 import time
 from pathlib import Path
@@ -27,7 +25,6 @@ import queue
 # Import the core analysis functions
 from main import load_cv_file
 from src.orchestrator.workflow import run_analysis
-from src.orchestrator.workflow import CVAnalysisWorkflow
 
 # Set up basic logging
 logging.basicConfig(
@@ -186,11 +183,11 @@ def analyze_cv_simple():
                 'success': True,
                 'candidate': result.cv_structured.personal.name if result.cv_structured else 'Unknown',
                 'target_role': target_role,
-                'technical_skills': len(result.skills_analysis.explicit_skills.get('tech', [])) if result.skills_analysis else 0,
-                'implicit_skills': len(result.skills_analysis.implicit_skills.get('soft', [])) if result.skills_analysis else 0,
-                'experience': result.skills_analysis.years_experience if result.skills_analysis else 0,
-                'market_demand': result.market_intelligence.market_insights.demand_level if result.market_intelligence else 'Unknown',
-                'salary_range': f"${result.market_intelligence.market_insights.salary_range.min:,} - ${result.market_intelligence.market_insights.salary_range.max:,}" if result.market_intelligence else 'Unknown',
+            'technical_skills': len(result.skills_analysis.explicit_skills.get('tech', [])) if result.skills_analysis and result.skills_analysis.explicit_skills else 0,
+            'implicit_skills': len(result.skills_analysis.implicit_skills) if result.skills_analysis and result.skills_analysis.implicit_skills else 0,
+            'years_experience': result.skills_analysis.seniority_indicators.years_exp if result.skills_analysis and result.skills_analysis.seniority_indicators else 0,
+            'market_demand': result.market_intelligence.market_insights.demand_level if result.market_intelligence and result.market_intelligence.market_insights else 'Unknown',
+            'salary_range': f"${result.market_intelligence.market_insights.salary_range.min:,} - ${result.market_intelligence.market_insights.salary_range.max:,}" if result.market_intelligence and result.market_intelligence.market_insights and hasattr(result.market_intelligence.market_insights.salary_range, 'min') else 'Unknown',
                 'report': result.final_report,
                 'errors': result.errors
             }
@@ -534,6 +531,11 @@ def run_analysis_background(session_id: str, analysis_info: Dict[str, Any]):
             'overall_match': '85%',  # Calculate based on analysis
             'analysis_mode': 'Advanced AI (Local)',
             
+            # Experience and seniority
+            'years_experience': result.skills_analysis.seniority_indicators.years_exp if result.skills_analysis and result.skills_analysis.seniority_indicators else 0,
+            'leadership_experience': result.skills_analysis.seniority_indicators.leadership if result.skills_analysis and result.skills_analysis.seniority_indicators else False,
+            'architecture_experience': result.skills_analysis.seniority_indicators.architecture if result.skills_analysis and result.skills_analysis.seniority_indicators else False,
+            
             # Skills breakdown
             'technical_skills': result.skills_analysis.explicit_skills.get('tech', []) if result.skills_analysis.explicit_skills else [],
             'implicit_skills': [skill.skill for skill in result.skills_analysis.implicit_skills] if result.skills_analysis.implicit_skills else [],
@@ -653,32 +655,56 @@ def extract_key_findings(report_content: str) -> str:
 @app.route('/api/report/<session_id>')
 def get_report(session_id):
     """Get analysis report for a session."""
-    if session_id not in active_analyses:
-        return jsonify({'error': 'Session not found'}), 404
+    # First check if session is in active analyses
+    if session_id in active_analyses:
+        analysis = active_analyses[session_id]
+        if analysis['status'] != 'completed':
+            return jsonify({'error': 'Analysis not completed'}), 400
+        
+        report_path = analysis['result']['report_path']
+        if not os.path.exists(report_path):
+            return jsonify({'error': 'Report file not found'}), 404
+        
+        return send_file(report_path, as_attachment=True, download_name=f"analysis_report_{session_id}.md")
     
-    analysis = active_analyses[session_id]
-    if analysis['status'] != 'completed':
-        return jsonify({'error': 'Analysis not completed'}), 400
+    # Fallback: Check if report file exists on disk (for cases where server was restarted)
+    logger.info(f"Session {session_id} not found in active analyses, checking for existing report file...")
     
-    report_path = analysis['result']['report_path']
-    if not os.path.exists(report_path):
-        return jsonify({'error': 'Report file not found'}), 404
+    # Construct expected report file path
+    report_path = Path('reports') / f"report_{session_id}.md"
     
-    return send_file(report_path, as_attachment=True, download_name=f"analysis_report_{session_id}.md")
+    if not report_path.exists():
+        logger.warning(f"Report file not found: {report_path}")
+        return jsonify({'error': 'Session not found and no report file exists'}), 404
+    
+    logger.info(f"Found existing report file: {report_path}")
+    return send_file(str(report_path), as_attachment=True, download_name=f"analysis_report_{session_id}.md")
 
 @app.route('/report/<session_id>')
 def view_report(session_id):
     """View report in browser."""
-    if session_id not in active_analyses:
-        return "<h1>Report Not Found</h1><p>The requested report was not found.</p>", 404
-    
-    analysis = active_analyses[session_id]
-    if analysis['status'] != 'completed':
-        return "<h1>Report Not Ready</h1><p>The analysis is still in progress. Please wait for completion.</p>", 400
-    
-    report_path = analysis['result']['report_path']
-    if not os.path.exists(report_path):
-        return "<h1>Report File Missing</h1><p>The report file could not be found.</p>", 404
+    # First check if session is in active analyses
+    if session_id in active_analyses:
+        analysis = active_analyses[session_id]
+        if analysis['status'] != 'completed':
+            return "<h1>Report Not Ready</h1><p>The analysis is still in progress. Please wait for completion.</p>", 400
+        
+        report_path = analysis['result']['report_path']
+        if not os.path.exists(report_path):
+            return "<h1>Report File Missing</h1><p>The report file could not be found.</p>", 404
+    else:
+        # Fallback: Check if report file exists on disk (for cases where server was restarted)
+        logger.info(f"Session {session_id} not found in active analyses, checking for existing report file...")
+        
+        # Construct expected report file path
+        report_path = Path('reports') / f"report_{session_id}.md"
+        
+        if not report_path.exists():
+            logger.warning(f"Report file not found: {report_path}")
+            return "<h1>Report Not Found</h1><p>The requested report was not found.</p>", 404
+        
+        logger.info(f"Found existing report file: {report_path}")
+        report_path = str(report_path)
     
     try:
         with open(report_path, 'r', encoding='utf-8') as f:
@@ -690,96 +716,264 @@ def view_report(session_id):
         
         return f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-            <title>CV Analysis Report</title>
+            <title>AI Skill Gap Analysis Report</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <style>
-                body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 1000px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background-color: #f8f9fa;
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
                 }}
+                
+                body {{
+                    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.7;
+                    color: #2d3748;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    padding: 20px;
+                }}
+                
                 .report-container {{
                     background: white;
+                    border-radius: 16px;
+                    padding: 40px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    position: relative;
+                }}
+                
+                .report-header {{
+                    text-align: center;
+                    margin-bottom: 40px;
+                    padding-bottom: 30px;
+                    border-bottom: 3px solid #667eea;
+                }}
+                
+                .report-title {{
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    color: #2d3748;
+                    margin-bottom: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 15px;
+                }}
+                
+                .report-subtitle {{
+                    color: #718096;
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                }}
+                
+                .back-button {{
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 30px;
+                    padding: 12px 24px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    text-decoration: none;
                     border-radius: 8px;
-                    padding: 30px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
                 }}
-                h1, h2, h3, h4 {{
-                    color: #212529;
+                
+                .back-button:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+                    text-decoration: none;
+                    color: white;
                 }}
+                
                 h1 {{
-                    border-bottom: 2px solid #495057;
-                    padding-bottom: 10px;
+                    font-size: 2.2rem;
+                    color: #2d3748;
+                    margin: 40px 0 20px 0;
+                    padding-bottom: 15px;
+                    border-bottom: 2px solid #e2e8f0;
+                    position: relative;
                 }}
+                
+                h1::before {{
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 60px;
+                    height: 2px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }}
+                
                 h2 {{
-                    border-bottom: 1px solid #dee2e6;
-                    padding-bottom: 8px;
-                    margin-top: 30px;
+                    font-size: 1.8rem;
+                    color: #4a5568;
+                    margin: 35px 0 15px 0;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #e2e8f0;
                 }}
+                
+                h3 {{
+                    font-size: 1.4rem;
+                    color: #2d3748;
+                    margin: 25px 0 10px 0;
+                }}
+                
+                h4 {{
+                    font-size: 1.2rem;
+                    color: #4a5568;
+                    margin: 20px 0 8px 0;
+                }}
+                
+                p {{
+                    margin-bottom: 15px;
+                    color: #4a5568;
+                }}
+                
+                ul, ol {{
+                    margin: 15px 0;
+                    padding-left: 25px;
+                }}
+                
+                li {{
+                    margin-bottom: 8px;
+                    color: #4a5568;
+                }}
+                
                 table {{
                     border-collapse: collapse;
                     width: 100%;
+                    margin: 25px 0;
+                    background: white;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                }}
+                
+                th {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 15px;
+                    text-align: left;
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                }}
+                
+                td {{
+                    padding: 15px;
+                    border-bottom: 1px solid #e2e8f0;
+                    color: #4a5568;
+                }}
+                
+                tr:nth-child(even) {{
+                    background-color: #f7fafc;
+                }}
+                
+                tr:hover {{
+                    background-color: #edf2f7;
+                }}
+                
+                code {{
+                    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-family: 'Fira Code', 'Courier New', monospace;
+                    font-size: 0.9rem;
+                    color: #e53e3e;
+                    border: 1px solid #e2e8f0;
+                }}
+                
+                pre {{
+                    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                    padding: 20px;
+                    border-radius: 8px;
+                    overflow-x: auto;
+                    border: 1px solid #e2e8f0;
                     margin: 20px 0;
                 }}
-                table, th, td {{
-                    border: 1px solid #dee2e6;
+                
+                pre code {{
+                    background: none;
+                    padding: 0;
+                    border: none;
+                    color: #2d3748;
                 }}
-                th, td {{
-                    padding: 12px;
-                    text-align: left;
+                
+                strong {{
+                    color: #2d3748;
+                    font-weight: 600;
                 }}
-                th {{
-                    background-color: #495057;
-                    color: white;
-                }}
-                tr:nth-child(even) {{
-                    background-color: #f8f9fa;
-                }}
-                code {{
-                    background-color: #e9ecef;
-                    padding: 2px 4px;
+                
+                .highlight {{
+                    background: linear-gradient(135deg, #fef5e7 0%, #fed7d7 100%);
+                    padding: 2px 6px;
                     border-radius: 4px;
-                    font-family: 'Courier New', monospace;
+                    font-weight: 600;
                 }}
-                pre {{
-                    background-color: #e9ecef;
-                    padding: 15px;
-                    border-radius: 4px;
-                    overflow-x: auto;
-                }}
-                a {{
-                    color: #495057;
-                    text-decoration: none;
-                }}
-                a:hover {{
-                    text-decoration: underline;
-                }}
-                .back-button {{
+                
+                .skill-tag {{
                     display: inline-block;
-                    margin-bottom: 20px;
-                    padding: 10px 20px;
-                    background-color: #495057;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
-                    text-decoration: none;
-                    border-radius: 4px;
-                    transition: background-color 0.2s;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    margin: 2px;
                 }}
-                .back-button:hover {{
-                    background-color: #5a67d8;
-                    text-decoration: none;
+                
+                .section-divider {{
+                    height: 2px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    margin: 40px 0;
+                    border-radius: 1px;
+                }}
+                
+                @media (max-width: 768px) {{
+                    .report-container {{
+                        padding: 20px;
+                        margin: 10px;
+                    }}
+                    
+                    .report-title {{
+                        font-size: 2rem;
+                    }}
+                    
+                    h1 {{
+                        font-size: 1.8rem;
+                    }}
+                    
+                    h2 {{
+                        font-size: 1.5rem;
+                    }}
                 }}
             </style>
         </head>
         <body>
             <div class="report-container">
-                <a href="/" class="back-button">← Back to Analysis</a>
+                <div class="report-header">
+                    <h1 class="report-title">
+                        <i class="fas fa-brain"></i>
+                        AI Skill Gap Analysis Report
+                    </h1>
+                    <p class="report-subtitle">Comprehensive CV Analysis with AI-Powered Insights</p>
+                </div>
+                
+                <a href="/" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Analysis
+                </a>
+                
+                <div class="section-divider"></div>
+                
                 {html_content}
             </div>
         </body>
@@ -797,7 +991,7 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle WebSocket disconnection."""
-    logger.info("Client disconnected from analysis server")
+    logger.debug("Client disconnected from analysis server")
 
 @socketio.on('join_analysis')
 def handle_join_analysis(data):
@@ -811,13 +1005,22 @@ if __name__ == '__main__':
     # Create reports directory
     Path('reports').mkdir(exist_ok=True)
     
+    # Determine if running in production mode
+    is_production = os.environ.get('FLASK_ENV') == 'production'
+    debug_mode = not is_production
+    
     # Start the Flask-SocketIO server
     port = int(os.environ.get('PORT', 5001))  # Use port 5001 by default, or PORT env var
     logger.info("Starting AI Skill Gap Analyst Web Server...")
+    logger.info(f"Environment: {'Production' if is_production else 'Development'}")
     logger.info(f"Access the application at: http://localhost:{port}")
+    
+    if is_production:
+        logger.warning("Running in production mode. Use Gunicorn for production deployment.")
+        logger.warning("Run: gunicorn --config gunicorn.conf.py wsgi:application")
     
     socketio.run(app, 
                 host='0.0.0.0', 
                 port=port, 
-                debug=True,
-                allow_unsafe_werkzeug=True)
+                debug=debug_mode,
+                allow_unsafe_werkzeug=debug_mode)

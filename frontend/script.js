@@ -93,6 +93,7 @@ function initializeEventListeners() {
     document.getElementById('newAnalysis').addEventListener('click', resetAnalysis);
     document.getElementById('downloadMd').addEventListener('click', () => downloadReport('md'));
     document.getElementById('downloadTxt').addEventListener('click', () => downloadReport('txt'));
+    document.getElementById('viewFullReport').addEventListener('click', viewFullReport);
 
     // Initialize header configuration
     updateHeaderConfig();
@@ -729,4 +730,15 @@ function updateAgentStatus(agent, status, message, details = '', technology = ''
                      status === 'completed' ? 'fas fa-check' :
                      status === 'error' ? 'fas fa-times' : 'fas fa-clock';
     statusIcon.className = `agent-status-icon ${iconClass}`;
+}
+
+function viewFullReport() {
+    if (!currentSessionId) {
+        showError('No analysis session found. Please run an analysis first.');
+        return;
+    }
+    
+    // Open the report in a new tab/window
+    const reportUrl = `/report/${currentSessionId}`;
+    window.open(reportUrl, '_blank');
 }
