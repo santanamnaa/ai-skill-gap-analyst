@@ -356,25 +356,6 @@ graph TB
 - **Minimum**: 4GB RAM, 2 CPU cores, 2GB disk space
 - **Recommended**: 8GB RAM, 4 CPU cores, 5GB disk space
 - **Operating Systems**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
-
-### Troubleshooting
-
-- **Common Issues**: See troubleshooting guide in documentation
-- **Performance Optimization**: Configuration tuning recommendations available
-- **Updates**: Regular updates with new features and improvements
-
-### Support Channels
-
-- **Documentation**: Comprehensive user guide and API reference
-- **Technical Support**: Available for enterprise customers
-- **Community**: Active user community and forums
-
-## License and Pricing
-
-**Open Source**: Core functionality available under MIT License
-**Enterprise Features**: Advanced analytics and integrations available
-**Support Options**: Community support included, professional support available
-
 ---
 
 **Built for modern HR teams - A complete solution for data-driven recruitment and talent assessment.**
