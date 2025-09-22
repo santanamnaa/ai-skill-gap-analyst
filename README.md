@@ -205,7 +205,7 @@ LINKEDIN_API_SECRET=your_linkedin_api_secret_here
 ### Web Interface
 
 1. **Access the Platform**: Open http://localhost:5001 in your browser
-2. **Upload CV**: Select CV file (PDF, DOC, DOCX, or TXT format)
+2. **Upload CV**: Select CV file (PDF or TXT format)
 3. **Configure Analysis**: Choose target role and analysis options
 4. **Run Analysis**: Click "Analyze CV" to start processing
 5. **Review Results**: View comprehensive analysis report
@@ -348,8 +348,6 @@ graph TB
 - **GDPR Compliance**: Built-in data retention policies and secure data handling
 - **Audit Trail**: Complete logging of all analysis activities
 - **Access Control**: Configurable user permissions and role-based access
-
-## Support and Maintenance
 
 ### System Requirements
 
